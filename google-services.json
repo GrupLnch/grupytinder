@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "316379143309",
+    "project_id": "grupytinder",
+    "storage_bucket": "grupytinder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316379143309:android:7a74979bd517f539edd6c4",
+        "android_client_info": {
+          "package_name": "host.exp.exponent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9sitmWMpPDhPYofDN4494DBvmeZU7mko"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
