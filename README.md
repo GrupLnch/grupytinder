@@ -44,6 +44,9 @@ out of choosing where to eat, making the process fun, fast, and easy.
 1. React Native: Cross-platform mobile development.
 2. JavaScript: For dynamic functionality.
 3. HTML & CSS: For styling and structuring the app.
+4. FireBase for authentication
+5. Expo google app auth for using google sign inside of expo app  
+(use expo-auth-session because expo-google-app-auth is deprecated)
 #### Back-End:
 1. Java: For handling core business logic.
 2. Node.js (optional): For API routing and server-side processing.
