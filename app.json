@@ -3,6 +3,7 @@
     "name": "grupytinder",
     "slug": "grupytinder",
     "version": "1.0.0",
+    "scheme": "grupytinder",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,10 +19,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "host.exp.exponent"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a139b74e-7549-4ed8-9362-4ccee5ab7757"
+      }
     }
   }
 }
