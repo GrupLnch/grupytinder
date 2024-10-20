@@ -1,25 +1,45 @@
-import React, {createContext, useContext, useEffect} from "react";
-import {useIdTokenAuthRequest} from "expo-auth-session/providers/google";
+import React, {createContext, useContext, useEffect, useState} from "react";
+import {View, Text, Platform} from "react-native";
+import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
+import { makeRedirectUri } from "expo-auth-session";
+import { signInWithCredential } from "@react-native-firebase/auth"; // Use @react-native-firebase/auth
+import { GoogleAuthProvider } from "@react-native-firebase/auth";
+import auth from "../firebase";
 
-const AuthContext = createContext({});
-
-const config = {
-    androidClientId: '316379143309-au5c79ocs75s1e48tcpvqghit0erp42h.apps.googleusercontent.com',
-    iosClientId: '316379143309-060fa2q928k8af5c8jh57d95da4s3e26.apps.googleusercontent.com',
-    scopes: ["profile", "email"],
-    permissions: ["public_profile", "email", "gender", "location"],
-}
+const AuthContext = createContext({
+    // Initial state context
+})
 
 export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+
+    const config = {
+        androidClientId: '316379143309-ddl0rsv98mvf7j1ar9o3sf308974sc0d.apps.googleusercontent.com',
+        iosClientId: '316379143309-avd51fk0necojuel6foc60clcor6fvck.apps.googleusercontent.com',
+        expoClientId: '316379143309-pr1eqn6163c18eoo8u56jm5v7dnk8j0t.apps.googleusercontent.com',
+        scopes: ["profile", "email"],
+    };
+
     const [request, response, promptAsync] = useIdTokenAuthRequest({
-        clientId: config.androidClientId,
+        clientId: config.expoClientId || (Platform.OS === 'android' ? config.androidClientId : config.iosClientId),
+        scopes: config.scopes,
+        redirectUri: makeRedirectUri({
+            scheme: "com.ssendawulac.grupytinder",
+            useProxy: false,
+        }),
     });
 
     useEffect(() => {
-        if (response?.type === 'success') {
-            const { id_token } = response.params;
-            // Handle successful login (e.g., save id_token or authenticate with Firebase)
-            console.log("Google login success: ", id_token);
+        if (response?.type === "success") {
+            const {id_token} = response.params;
+            const credential = GoogleAuthProvider.credential(id_token);
+            signInWithCredential(auth, credential)
+                .then((userCredential) => {
+                    setUser(userCredential.user);
+                })
+                .catch((error) => {
+                    console.error("Firebase credential error:", error);
+                });
         }
     }, [response]);
 
@@ -27,17 +47,13 @@ export const AuthProvider = ({ children }) => {
         try {
             await promptAsync();
         } catch (error) {
-            console.error("Sign-in error: ", error);
+            console.error("Sign-in error:", error);
         }
     };
 
-
     return (
-        <AuthContext.Provider value={{
-            user: null,
-            signInWithGoogle
-        }}>
-            { children }
+        <AuthContext.Provider value={{user, signInWithGoogle}}>
+            {children}
         </AuthContext.Provider>
     );
 };
