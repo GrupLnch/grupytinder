@@ -1,0 +1,50 @@
+{
+  "project_info": {
+    "project_number": "316379143309",
+    "project_id": "grupytinder",
+    "storage_bucket": "grupytinder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316379143309:android:7bef8433c9a3ee7eedd6c4",
+        "android_client_info": {
+          "package_name": "com.ssendawulac.grupytinder"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "316379143309-ddl0rsv98mvf7j1ar9o3sf308974sc0d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ssendawulac.grupytinder",
+            "certificate_hash": "80fa6cc3b6df834f105c4b0e679e612d1d23e6f4"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYMuZPYvNQCOk4PiiJlDVzC0jTcB3ZOo8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "316379143309-pr1eqn6163c18eoo8u56jm5v7dnk8j0t.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "316379143309-avd51fk0necojuel6foc60clcor6fvck.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ssedawulac.grupytinder"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
