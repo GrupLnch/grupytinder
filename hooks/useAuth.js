@@ -1,16 +1,16 @@
 import React, {createContext, useContext, useEffect, useState} from "react";
-import {View, Text, Platform} from "react-native";
-import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
-import { makeRedirectUri } from "expo-auth-session";
-import { signInWithCredential } from "@react-native-firebase/auth"; // Use @react-native-firebase/auth
-import { GoogleAuthProvider } from "@react-native-firebase/auth";
-import auth from "../firebase";
+import {useIdTokenAuthRequest } from "expo-auth-session/providers/google";
+import { makeRedirectUri } from 'expo-auth-session';
+import {Platform} from "react-native";
+import {GoogleAuthProvider, signInWithCredential} from "@firebase/auth";
 
 const AuthContext = createContext({
     // Initial state context
+    //persistence: getReactNativePersistence(ReactNativeAsyncStorage)
 })
 
 export const AuthProvider = ({ children }) => {
+
     const [user, setUser] = useState(null);
 
     const config = {
