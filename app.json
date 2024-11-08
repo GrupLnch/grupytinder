@@ -4,6 +4,7 @@
     "slug": "grupytinder",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "grupytinder",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -16,6 +17,19 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "supportsTablet": true
     },
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/crashlytics",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -27,6 +41,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+
     "extra": {
       "eas": {
         "projectId": "a139b74e-7549-4ed8-9362-4ccee5ab7757"

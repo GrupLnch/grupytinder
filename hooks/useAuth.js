@@ -24,8 +24,8 @@ export const AuthProvider = ({ children }) => {
         clientId: config.expoClientId || (Platform.OS === 'android' ? config.androidClientId : config.iosClientId),
         scopes: config.scopes,
         redirectUri: makeRedirectUri({
-            scheme: "com.ssendawulac.grupytinder",
-            useProxy: false,
+            //scheme: "com.ssendawulac.grupytinder",
+            useProxy: true,
         }),
     });
 
