@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ssendawulac.grupytinder"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,6 +30,10 @@
       "eas": {
         "projectId": "a139b74e-7549-4ed8-9362-4ccee5ab7757"
       }
-    }
+    },
+    "owner": "ssendawula1",
+    "plugins": [
+      "expo-build-properties"
+    ]
   }
 }
