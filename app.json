@@ -4,7 +4,7 @@
     "slug": "grupytinder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "grupytinder",
+    "scheme": "com.ssendawulac.grupytinder",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
