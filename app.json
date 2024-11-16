@@ -41,11 +41,11 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-
     "extra": {
       "eas": {
         "projectId": "a139b74e-7549-4ed8-9362-4ccee5ab7757"
       }
-    }
+    },
+    "owner": "ssendawula1"
   }
 }
