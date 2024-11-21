@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
-import { GoogleAuthProvider, signInWithCredential } from "@firebase/auth";
+import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut } from "@firebase/auth";
 import auth from "../firebase";
 import {Platform} from "react-native";
 
 const AuthContext = createContext({
     user: null,
     signInWithGoogle: () => {},
+    signOut: () => {},
 });
 
 export const AuthProvider = ({ children }) => {
@@ -53,8 +54,18 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const signOut = async () => {
+        try {
+            await firebaseSignOut(auth);
+            setUser(null);
+            console.log("User signed out successfully");
+        } catch (error) {
+            console.error("Error signing out", error);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, signInWithGoogle }}>
+        <AuthContext.Provider value={{ user, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );
