@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
 import { GoogleAuthProvider, signInWithCredential } from "@firebase/auth";
 import auth from "../firebase";
-import {Platform} from "react-native"; // Firebase instance
+import {Platform} from "react-native";
 
 const AuthContext = createContext({
     user: null,
@@ -29,6 +29,8 @@ export const AuthProvider = ({ children }) => {
         // Handle the sign-in response when successful
         if (response?.type === "success") {
             const { id_token } = response.params;
+            console.log("Google Sign-In response received, attempting to authenticate with Firebase...");
+
             const credential = GoogleAuthProvider.credential(id_token);
             signInWithCredential(auth, credential)
                 .then((userCredential) => {
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }) => {
     // Google Sign-In trigger
     const signInWithGoogle = async () => {
         try {
+            console.log("Prompting user for Google sign-in...");
             await promptAsync();
         } catch (error) {
             console.error("Sign-in error:", error);
