@@ -2,16 +2,18 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from "
 import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
 import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut } from "@firebase/auth";
 import auth from "../firebase";
-import {Platform} from "react-native";
+import { Platform } from "react-native";
 
 const AuthContext = createContext({
     user: null,
+    loading: false,
     signInWithGoogle: () => {},
     signOut: () => {},
 });
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(false); // Added loading state
 
     // Configuration for Google Authentication
     const config = {
@@ -33,6 +35,7 @@ export const AuthProvider = ({ children }) => {
             console.log("Google Sign-In response received, attempting to authenticate with Firebase...");
 
             const credential = GoogleAuthProvider.credential(id_token);
+            setLoading(true); // Set loading to true before attempting Firebase authentication
             signInWithCredential(auth, credential)
                 .then((userCredential) => {
                     setUser(userCredential.user);
@@ -40,6 +43,9 @@ export const AuthProvider = ({ children }) => {
                 })
                 .catch((error) => {
                     console.error("Firebase credential error:", error);
+                })
+                .finally(() => {
+                    setLoading(false); // Reset loading when authentication completes
                 });
         }
     }, [response]);
@@ -47,6 +53,7 @@ export const AuthProvider = ({ children }) => {
     // Google Sign-In trigger
     const signInWithGoogle = async () => {
         try {
+            setLoading(true); // Set loading to true when the user presses the login button
             console.log("Prompting user for Google sign-in...");
             await promptAsync();
         } catch (error) {
@@ -55,7 +62,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     const signOut = async () => {
+        if (!user) return; // Prevent sign-out if no user is logged in
+
         try {
+            console.log("Signing out...");
             await firebaseSignOut(auth);
             setUser(null);
             console.log("User signed out successfully");
@@ -67,7 +77,7 @@ export const AuthProvider = ({ children }) => {
     const memoizedUser = useMemo(() => user, [user]);
 
     return (
-        <AuthContext.Provider value={{ user: memoizedUser, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user: memoizedUser, loading, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );

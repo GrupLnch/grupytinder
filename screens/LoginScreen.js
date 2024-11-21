@@ -1,30 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ActivityIndicator, Button, Text, View, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import useAuth from "../hooks/useAuth";
 
 const LoginScreen = () => {
-    const { signInWithGoogle } = useAuth();
-    const [loading, setLoading] = useState(false);
-
-    const handleLogin = async () => {
-        setLoading(true);
-        try {
-            await signInWithGoogle();
-        } finally {
-            setLoading(false); // Reset loading state whether success or failure
-        }
-    };
+    const navigation = useNavigation();
+    const { signInWithGoogle, loading } = useAuth();
 
     return (
         <View style={styles.container}>
-            <Text style={styles.text}>Login to Grup Lnch</Text>
+            <Text style={styles.welcomeText}>Welcome to Grup Lnch</Text>
+
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#0000ff" />
-                    <Text style={styles.loadingText}>Loading...</Text>
-                </View>
+                <ActivityIndicator size="large" color="#FF5733" />
             ) : (
-                <Button title="Login" onPress={handleLogin} />
+                <Button
+                    title="Login"
+                    onPress={signInWithGoogle}
+                />
             )}
         </View>
     );
@@ -33,21 +26,16 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#FFF8F0",
     },
-    text: {
-        fontSize: 18,
+    welcomeText: {
+        fontSize: 24,
+        fontWeight: "bold",
         marginBottom: 20,
-    },
-    loadingContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: '#555',
+        color: "#FF5733",
+        textAlign: "center",
     },
 });
 
