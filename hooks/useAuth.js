@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
 import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut } from "@firebase/auth";
 import auth from "../firebase";
@@ -64,8 +64,10 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const memoizedUser = useMemo(() => user, [user]);
+
     return (
-        <AuthContext.Provider value={{ user, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user: memoizedUser, signInWithGoogle, signOut }}>
             {children}
         </AuthContext.Provider>
     );
