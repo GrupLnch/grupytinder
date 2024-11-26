@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
         androidClientId: '316379143309-ddl0rsv98mvf7j1ar9o3sf308974sc0d.apps.googleusercontent.com',
         iosClientId: '316379143309-avd51fk0necojuel6foc60clcor6fvck.apps.googleusercontent.com',
         scopes: ["profile", "email"],
+        permissions: ["public_profile", "email", "gender", "location"],
     };
 
     // Initialize Google Sign-In request
