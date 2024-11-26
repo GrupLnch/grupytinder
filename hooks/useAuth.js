@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
-import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut } from "@firebase/auth";
+import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut, onAuthStateChanged } from "@firebase/auth";
 import auth from "../firebase";
 import { Platform } from "react-native";
 
@@ -13,7 +13,7 @@ const AuthContext = createContext({
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(false); // Added loading state
+    const [loading, setLoading] = useState(true); // Start as `true` to block UI until session is determined
 
     // Configuration for Google Authentication
     const config = {
@@ -29,14 +29,32 @@ export const AuthProvider = ({ children }) => {
         scopes: config.scopes,
     });
 
+    // Listen for authentication state changes
     useEffect(() => {
-        // Handle the sign-in response when successful
+        const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+            if (authUser) {
+                // User is signed in
+                setUser(authUser);
+                console.log("Session restored:", authUser);
+            } else {
+                // User is signed out
+                setUser(null);
+                console.log("No active session, user is logged out.");
+            }
+            setLoading(false); // Stop loading once session is determined
+        });
+
+        return unsubscribe; // Cleanup listener on component unmount
+    }, []);
+
+    // Handle Google sign-in response
+    useEffect(() => {
         if (response?.type === "success") {
             const { id_token } = response.params;
             console.log("Google Sign-In response received, attempting to authenticate with Firebase...");
 
             const credential = GoogleAuthProvider.credential(id_token);
-            setLoading(true); // Set loading to true before attempting Firebase authentication
+            setLoading(true); // Show loading during authentication
             signInWithCredential(auth, credential)
                 .then((userCredential) => {
                     setUser(userCredential.user);
@@ -45,16 +63,14 @@ export const AuthProvider = ({ children }) => {
                 .catch((error) => {
                     console.error("Firebase credential error:", error);
                 })
-                .finally(() => {
-                    setLoading(false); // Reset loading when authentication completes
-                });
+                .finally(() => setLoading(false));
         }
     }, [response]);
 
     // Google Sign-In trigger
     const signInWithGoogle = async () => {
         try {
-            setLoading(true); // Set loading to true when the user presses the login button
+            setLoading(true); // Show loading during the sign-in process
             console.log("Prompting user for Google sign-in...");
             await promptAsync();
         } catch (error) {
@@ -62,8 +78,9 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Sign-out function
     const signOut = async () => {
-        if (!user) return; // Prevent sign-out if no user is logged in
+        if (!user) return; // Prevent unnecessary sign-out calls
 
         try {
             console.log("Signing out...");
