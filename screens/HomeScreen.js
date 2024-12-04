@@ -1,5 +1,5 @@
-import React from 'react';
-import { Text, View, Button } from 'react-native';
+import React, {useLayoutEffect} from 'react';
+import {Text, View, Button, SafeAreaView} from 'react-native';
 import { useNavigation } from "@react-navigation/core";
 import useAuth from "../hooks/useAuth";
 
@@ -12,8 +12,15 @@ const HomeScreen = () => {
         navigation.navigate('Login'); // Navigate to Login screen after sign out
     };
 
+    // Remove our header that says "Home"
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: false,
+        })
+    }, []);
+
     return (
-        <View>
+        <SafeAreaView>
             <Text>I am the HomeScreen</Text>
             <Text>Welcome, {user?.displayName || "Guest"}</Text>
             <Button
@@ -24,7 +31,7 @@ const HomeScreen = () => {
                 title="Log Out"
                 onPress={handleSignOut} // Sign out and navigate to Login screen
             />
-        </View>
+        </SafeAreaView>
     );
 };
 
