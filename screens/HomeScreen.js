@@ -1,7 +1,8 @@
 import React, {useLayoutEffect} from 'react';
-import {Text, View, Button, SafeAreaView} from 'react-native';
+import {Text, View, Button, SafeAreaView, TouchableOpacity, Image} from 'react-native';
 import { useNavigation } from "@react-navigation/core";
 import useAuth from "../hooks/useAuth";
+//import tw from "tailwind-rn";
 
 const HomeScreen = () => {
     const navigation = useNavigation();
@@ -21,6 +22,17 @@ const HomeScreen = () => {
 
     return (
         <SafeAreaView>
+            {/* Header */}
+            <View>
+                <TouchableOpacity>
+                    <Image
+                        //style={tw("h-10 w-10 rounded-full")}
+                        source={{uri: user.photoURL }}
+                    />
+                </TouchableOpacity>
+            </View>
+
+            {/* End of header */}
             <Text>I am the HomeScreen</Text>
             <Text>Welcome, {user?.displayName || "Guest"}</Text>
             <Button

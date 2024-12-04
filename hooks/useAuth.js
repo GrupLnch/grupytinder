@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
-import { useIdTokenAuthRequest } from "expo-auth-session/providers/google";
-import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut, onAuthStateChanged } from "@firebase/auth";
+import React, {createContext, useContext, useEffect, useMemo, useState} from "react";
+import {useIdTokenAuthRequest} from "expo-auth-session/providers/google";
+import {GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signOut as firebaseSignOut} from "@firebase/auth";
 import auth from "../firebase";
-import { Platform } from "react-native";
+import {Platform} from "react-native";
 
 const AuthContext = createContext({
     user: null,
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for authentication state changes
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+        return onAuthStateChanged(auth, (authUser) => {
             if (authUser) {
                 // User is signed in
                 setUser(authUser);
@@ -42,9 +42,7 @@ export const AuthProvider = ({ children }) => {
                 console.log("No active session, user is logged out.");
             }
             setLoading(false); // Stop loading once session is determined
-        });
-
-        return unsubscribe; // Cleanup listener on component unmount
+        }); // Cleanup listener on component unmount
     }, []);
 
     // Handle Google sign-in response
