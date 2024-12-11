@@ -1,15 +1,45 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { ActivityIndicator, View } from "react-native";
 import HomeScreen from "./screens/HomeScreen";
 import ChatScreen from "./screens/ChatScreen";
+import LoginScreen from "./screens/LoginScreen";
+import useAuth from "./hooks/useAuth";
 
 const Stack = createNativeStackNavigator();
 
 const StackNavigator = () => {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        // Show loading spinner while checking for active session
+        return (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <ActivityIndicator size="large" color="#FF5733" />
+            </View>
+        );
+    }
+
     return (
-        <Stack.Navigator>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Navigator id="MainStackNavigator">
+            {user ? (
+                <>
+                    <Stack.Screen
+                        name="Home"
+                        component={HomeScreen}
+                    />
+                    <Stack.Screen
+                        name="Chat"
+                        component={ChatScreen}
+                    />
+                </>
+            ) : (
+                <Stack.Screen
+                    name="Login"
+                    component={LoginScreen}
+                    options={{ headerShown: false }}
+                />
+            )}
         </Stack.Navigator>
     );
 };
