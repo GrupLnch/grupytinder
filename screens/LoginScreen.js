@@ -9,7 +9,7 @@ const LoginScreen = () => {
 
     return (
         <ImageBackground
-            source={require("C:\\Users\\mukas\\IdeaProjects\\grupytinder\\media\\Logo 1 (So cool).png")}
+            source={require("../media/Logo 1 (So cool).png")}
             style={styles.backgroundImage}
             imageStyle={styles.imageStyle} // Apply image-specific styles
         >
