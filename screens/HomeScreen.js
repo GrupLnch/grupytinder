@@ -41,7 +41,7 @@ const HomeScreen = () => {
             />
             <Button
                 title="Log Out"
-                onPress={handleSignOut} // Sign out and navigate to Login screen
+                onPress={handleSignOut}
             />
         </SafeAreaView>
     );
