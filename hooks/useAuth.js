@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
             console.log("Google Sign-In response received, attempting to authenticate with Firebase...");
 
             const credential = GoogleAuthProvider.credential(id_token);
-            setLoading(true); // Show loading during authentication
+            setLoading(true);
             signInWithCredential(auth, credential)
                 .then((userCredential) => {
                     setUser(userCredential.user);
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     // Google Sign-In trigger
     const signInWithGoogle = async () => {
         try {
-            setLoading(true); // Show loading during the sign-in process
+            setLoading(true);
             console.log("Prompting user for Google sign-in...");
             await promptAsync();
         } catch (error) {

@@ -11,7 +11,7 @@ const LoginScreen = () => {
         <ImageBackground
             source={require("../media/Logo 1 (So cool).png")}
             style={styles.backgroundImage}
-            imageStyle={styles.imageStyle} // Apply image-specific styles
+            imageStyle={styles.imageStyle}
         >
             <View style={styles.overlay}>
                 <Text style={styles.welcomeText}>Welcome to Grup Lnch</Text>
@@ -35,15 +35,15 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     imageStyle: {
-        resizeMode: "cover", // Ensures the image fills the entire background
+        resizeMode: "cover",
         width: '100%',
         height: '100%',
     },
     overlay: {
         flex: 1,
-        justifyContent: "space-between", // Space out elements (welcome text at top, button at bottom)
+        justifyContent: "space-between",
         alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.5)", // Dark overlay for better text contrast
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
         paddingVertical: 50,
         width: "100%",
     },
