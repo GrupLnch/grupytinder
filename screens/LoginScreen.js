@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import useAuth from "../hooks/useAuth";
 
 const LoginScreen = () => {
-    const navigation = useNavigation();
+    useNavigation();
     const { signInWithGoogle, loading } = useAuth();
 
     return (
