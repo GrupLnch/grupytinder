@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }) => {
 
     // Handle Google sign-in response
     useEffect(() => {
+        console.log("Google Sign-In response:", response);
         if (response?.type === "success") {
             const { id_token } = response.params;
             console.log("Google Sign-In response received, attempting to authenticate with Firebase...");
@@ -68,11 +69,14 @@ export const AuthProvider = ({ children }) => {
     // Google Sign-In trigger
     const signInWithGoogle = async () => {
         try {
+            console.log("Login button pressed");
             setLoading(true);
-            console.log("Prompting user for Google sign-in...");
-            await promptAsync();
+            const result = await promptAsync();
+            console.log("promptAsync result:", result);
         } catch (error) {
             console.error("Sign-in error:", error);
+        } finally {
+            setLoading(false);
         }
     };
 

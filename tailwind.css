@@ -1,1 +1,15 @@
+.flex {
+  display: flex
+}
 
+.h-10 {
+  height: 2.5rem
+}
+
+.w-10 {
+  width: 2.5rem
+}
+
+.rounded-full {
+  border-radius: 9999px
+}

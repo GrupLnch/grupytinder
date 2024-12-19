@@ -19,7 +19,13 @@ const LoginScreen = () => {
                 {loading ? (
                     <ActivityIndicator size="large" color="#FF5733" />
                 ) : (
-                    <TouchableOpacity style={styles.loginButton} onPress={signInWithGoogle}>
+                    <TouchableOpacity
+                        style={styles.loginButton}
+                        onPress={() => {
+                            console.log("Login button pressed");
+                            signInWithGoogle();
+                        }}
+                    >
                         <Text style={styles.loginButtonText}>Login</Text>
                     </TouchableOpacity>
                 )}

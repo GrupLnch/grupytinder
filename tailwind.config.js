@@ -1,7 +1,9 @@
 module.exports = {
   content: [
-    "./App.{js,jsx,ts,tsx}",  // Main app entry point
-    "./src/**/*.{js,jsx,ts,tsx}" // All files in the src folder
+    "./App.{js,jsx,ts,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./components/**/*.{js,jsx,ts,tsx}",
+    "./screens/**/*.{js,jsx,ts,tsx}"
   ],
   theme: {
     extend: {},
