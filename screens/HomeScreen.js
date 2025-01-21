@@ -2,10 +2,10 @@ import React, { useLayoutEffect } from 'react';
 import { Text, View, Button, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from "@react-navigation/core";
 import useAuth from "../hooks/useAuth";
-//import { create } from 'tailwind-rn';
-//import styles from '../tailwind.json';
+import { create } from 'tailwind-rn';
+import styles from '../tailwind.json';
 
-//const { tailwind } = create(styles);
+const {tailwind } = create(styles, {});
 
 const HomeScreen = () => {
     const navigation = useNavigation();
@@ -26,13 +26,16 @@ const HomeScreen = () => {
     return (
         <SafeAreaView>
             {/* Header */}
-            <View>
+            <View style={tailwind('flex-row justify-between items-center px-4 py-2')}>
                 <TouchableOpacity>
-                    <Image
-                        //style={tailwind('h-10 w-10 rounded-full')}
-                        source={{ uri: user.photoURL }}
+                <Image
+                    style={tailwind('h-12 w-12 rounded-full border-2 border-gray-300')}
+                    source={{ uri: user.photoURL || 'https://via.placeholder.com/150' }}
                     />
                 </TouchableOpacity>
+                <Text style={tailwind('text-lg font-bold text-gray-800')}>
+                    Welcome, {user?.displayName || "Guest"}
+                </Text>
             </View>
 
             {/* End of header */}
