@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react';
+import React from 'react';
 import { Text, View, Button, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
@@ -8,34 +8,28 @@ const HomeScreen = () => {
     const { user, signOut } = useAuth();
 
     const handleSignOut = async () => {
-        await signOut(); // Call signOut from the useAuth context
-        navigation.navigate('Login'); // Navigate to Login screen after sign out
+        await signOut();
+        navigation.navigate('Login');
     };
 
-    // Remove our header that says "Home"
-    useLayoutEffect(() => {
-        navigation.setOptions({
-            headerShown: false,
-        });
-    }, [navigation]);
-
     return (
-        <SafeAreaView>
+        <SafeAreaView className="flex-1 bg-white">
             {/* Header */}
-            <View>
+            <View className="flex-row justify-between items-center px-4 py-2">
                 <TouchableOpacity>
                     <Image
+                        className="h-12 w-12 rounded-full border-2 border-gray-300"
                         source={{ uri: user?.photoURL || 'https://via.placeholder.com/150' }}
                     />
                 </TouchableOpacity>
-                <Text>
+                <Text className="text-lg font-bold text-gray-800">
                     Welcome, {user?.displayName || 'Guest'}
                 </Text>
             </View>
 
             {/* Content */}
-            <View>
-                <Text>I am the HomeScreen</Text>
+            <View className="flex-1 justify-center items-center">
+                <Text className="text-xl font-semibold">I am the HomeScreen</Text>
                 <Button
                     title="Go to chat screen"
                     onPress={() => navigation.navigate('Chat')}
