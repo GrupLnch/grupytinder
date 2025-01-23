@@ -1,8 +1,7 @@
 import React, { useLayoutEffect } from 'react';
 import { Text, View, Button, SafeAreaView, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from "@react-navigation/core";
-import useAuth from "../hooks/useAuth";
-import { tailwind } from "tailwind-rn";
+import { useNavigation } from '@react-navigation/native';
+import useAuth from '../hooks/useAuth';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
@@ -21,26 +20,25 @@ const HomeScreen = () => {
     }, [navigation]);
 
     return (
-        <SafeAreaView style={tailwind('flex-1')}>
+        <SafeAreaView>
             {/* Header */}
-            <View style={tailwind('flex-row justify-between items-center px-4 py-2')}>
+            <View>
                 <TouchableOpacity>
                     <Image
-                        style={tailwind('h-12 w-12 rounded-full border-2 border-gray-300')}
-                        source={{ uri: user.photoURL || 'https://via.placeholder.com/150' }}
+                        source={{ uri: user?.photoURL || 'https://via.placeholder.com/150' }}
                     />
                 </TouchableOpacity>
-                <Text style={tailwind('text-lg font-bold text-gray-800')}>
-                    Welcome, {user?.displayName || "Guest"}
+                <Text>
+                    Welcome, {user?.displayName || 'Guest'}
                 </Text>
             </View>
 
-            {/* End of header */}
-            <View style={tailwind('flex-1 justify-center items-center')}>
-                <Text style={tailwind('text-xl font-semibold')}>I am the HomeScreen</Text>
+            {/* Content */}
+            <View>
+                <Text>I am the HomeScreen</Text>
                 <Button
                     title="Go to chat screen"
-                    onPress={() => navigation.navigate("Chat")}
+                    onPress={() => navigation.navigate('Chat')}
                 />
                 <Button
                     title="Log Out"
