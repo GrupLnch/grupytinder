@@ -10,8 +10,8 @@ based on your preferences.
 
 ### Getting Started
 
-These instructions will help you set up the project on your local machine for development and testing
-purposes.
+Follow these steps to set up Grup Lunch for development on your local 
+machine. Ensure that Node.js, npm (or yarn), and Expo CLI are installed.
 
 #### Clone into repo
 
@@ -19,46 +19,48 @@ purposes.
 
 `cd grupytinder`
 
-#### Run the React Native development server
+#### Install Dependencies
+
+`npm install`
+
+#### Start the Development Server
 
 `npx expo start`
 
 ### Description
 
-Group Lunch allows users to swipe left to pass or swipe right to select 
-different food options, restaurants, or genres based on their preferences. 
-Users can filter choices by distance, cuisine, or even event type (date
-nights, corporate gatherings, etc.). The app is designed to take the stress
-out of choosing where to eat, making the process fun, fast, and easy.
+Grup Lunch allows users to swipe left to pass or swipe right to select different food options, 
+restaurants, or genres based on their preferences. Users can filter choices by distance, cuisine,
+or even event type (e.g., date nights, corporate gatherings). The app is designed to take the 
+stress out of choosing where to eat, making the process fun, fast, and easy.
 
 ### Features
 
-1. Swipe Interface: Easily browse food and restaurant options with a swipe.
-2. Customized Search Radius: Set a search radius to find restaurants near your location.
-3. Special Categories: Choose food options based on specific themes like "Taco Tuesdays" or "Date Night."
-4. Corporate Use: Organize group lunch orders for teams and companies.
-5. Multi-Platform Support: Compatible with both iOS and Android devices.
+1. Fun Swipe Interface: Discover food and restaurants by swiping left to pass or right to select. 
+2. Customized Search Radius: Find restaurants nearby or widen the search radius to explore more options. 
+3. Themed Categories: Filter food options based on themes like "Taco Tuesday," "Date Night," or "Vegan Picks."
+4. Group Orders: Simplify team lunch orders with corporate functionality, including split-bill options. 
+5. Multi-Platform Support: Available on both iOS and Android devices.
 
 ### Technologies Used
 #### Front-End:
 1. React Native: Cross-platform mobile development.
 2. JavaScript: For dynamic functionality.
-3. HTML & CSS: For styling and structuring the app.
-4. FireBase for authentication
-5. Expo google app auth for using google sign inside of expo app  
+3. Expo google app auth for using google sign inside of expo app  
 (use expo-auth-session because expo-google-app-auth is deprecated)
 #### Back-End:
-1. Java: For handling core business logic.
+1. Firebase Authentication: Secure user login and session management.
 2. Node.js (optional): For API routing and server-side processing.
 #### Tools:
-1. Visual Studio Code (VSC)/ Intellij: Code editor.
+1. Visual Studio Code (VSC)/ Intellij: Preferred IDEs.
 2. Git & GitHub: Version control and collaboration.
 
 ### Future Enhancements
 
-1. Point System: Implement a reward system for frequent users.
-2. Food Delivery Integration: Integrate with platforms like DoorDash, Uber Eats, etc.
-3. Global Compatibility: Ensure real-time availability in different countries.
-4. Sponsorship Opportunities: Collaborate with big restaurant chains to feature their offer
+1. Food Delivery Integration: Collaborate with services like DoorDash and Uber Eats for seamless 
+   food delivery. 
+2. Global Compatibility: Expand real-time availability to users worldwide. 
+3. Point System: Encourage loyalty with a rewards program for frequent users. 
+4. Sponsorship Opportunities: Partner with restaurants to feature exclusive offers and promotions.
 
 
