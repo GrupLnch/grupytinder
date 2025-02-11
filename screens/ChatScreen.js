@@ -3,7 +3,7 @@ import { Text, View } from 'react-native'
 
 const ChatScreen = () => {
   return (
-    <View>
+    <View testID="chat-screen-view">
         <Text>I am the ChatScreen</Text>
     </View>
   )
