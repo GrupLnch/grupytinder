@@ -5,7 +5,6 @@ import react from "eslint-plugin-react";
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
   js.configs.recommended,
-  react.configs.recommended,
   {
     files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
     languageOptions: {
@@ -21,8 +20,9 @@ export default [
       react,
     },
     rules: {
-      "no-undef": "off", //
-      "react/prop-types": "off", //
+      "no-undef": "off",
+      "react/prop-types": "off",
     },
-  }
+  },
+  react.configs.recommended,
 ];
