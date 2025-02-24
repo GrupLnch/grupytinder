@@ -1,0 +1,59 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-test:
+    name: Install, Lint, Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Jest tests
+        run: npm test
+
+#  build-expo:
+#    name: Build Expo App
+#    needs: build-test
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#
+#      - name: Setup Node.js
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: 18
+#
+#      - name: Install dependencies
+#        run: npm install
+#
+#      - name: Install Expo CLI
+#        run: npm install -g eas-cli
+#
+#      - name: Build App
+#        run: eas build --profile preview --platform all --non-interactive
+#        env:
+#          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

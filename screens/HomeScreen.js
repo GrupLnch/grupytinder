@@ -10,7 +10,7 @@ const HomeScreen = () => {
     const { user, signOut } = useAuth();
 
     // Static data for restaurants to test swiping
-    const [restaurants, setRestaurants] = useState([
+    const [restaurants] = useState([
         {
             id: '1',
             name: 'Italian Bistro',
