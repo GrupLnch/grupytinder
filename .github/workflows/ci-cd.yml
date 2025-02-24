@@ -57,17 +57,3 @@ jobs:
         run: eas build --profile preview --platform all --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-  deploy:
-    name: Deploy to Expo
-    needs: build-expo
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install Expo CLI
-        run: npm install -g eas-cli
-
-      - name: Publish App
-        run: eas update --branch develop --channel staging --message "Automated deploy from GitHub Actions" --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
