@@ -11,18 +11,18 @@ export default [
       sourceType: "module",
       globals: {
         ...globals.browser,
-        ...globals.node, // Adds Node.js globals
-        ...globals.jest  // Fixes Jest-related errors (describe, it, expect)
+        ...globals.node,
+        ...globals.jest
       },
     },
     plugins: {
-      react
+      react: react,
     },
     rules: {
-      "no-undef": "off", // Prevents "module is not defined" errors
-      "react/prop-types": "off", // Optional: Disable prop-types enforcement
+      "no-undef": "off",
+      "react/prop-types": "off",
     },
-    ...js.configs.recommended,  // Instead of "extends", include the recommended configs
+    ...js.configs.recommended,
     ...react.configs.recommended,
   }
 ];
