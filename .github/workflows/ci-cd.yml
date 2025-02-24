@@ -68,6 +68,6 @@ jobs:
         run: npm install -g eas-cli
 
       - name: Publish App
-        run: eas update --branch develop --non-interactive
+        run: eas update --branch develop --message "Automated deploy from GitHub Actions" --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
