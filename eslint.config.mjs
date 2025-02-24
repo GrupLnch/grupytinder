@@ -4,6 +4,8 @@ import react from "eslint-plugin-react";
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
+  js.configs.recommended,
+  react.configs.recommended,
   {
     files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
     languageOptions: {
@@ -12,17 +14,15 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.jest
+        ...globals.jest,
       },
     },
     plugins: {
-      react: react,
+      react,
     },
     rules: {
-      "no-undef": "off",
-      "react/prop-types": "off",
+      "no-undef": "off", //
+      "react/prop-types": "off", //
     },
-    ...js.configs.recommended,
-    ...react.configs.recommended,
   }
 ];
