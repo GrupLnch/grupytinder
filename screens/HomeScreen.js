@@ -37,7 +37,7 @@ const HomeScreen = () => {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
+        <SafeAreaView testID="home-screen-view" className="flex-1 bg-white">
             {/* Header */}
             <View className="flex-row justify-between items-center px-4 py-4">
                 {/* Profile Icon */}
@@ -57,7 +57,7 @@ const HomeScreen = () => {
                 </View>
 
                 {/* Chat Icon */}
-                <TouchableOpacity onPress={() => navigation.navigate('Chat')}>
+                <TouchableOpacity testID="chat-icon" onPress={() => navigation.navigate('Chat')}>
                     <Ionicons name="chatbubbles-sharp" size={30} color="#333" />
                 </TouchableOpacity>
             </View>
@@ -80,7 +80,7 @@ const HomeScreen = () => {
                 onSwipedRight={() => console.log('Swiped right')}
                 backgroundColor="#f0f0f0"
                 cardIndex={0}
-                stackSize={3}  // number of cards in stack before it starts rotating
+                stackSize={3}
                 animateCardOpacity
                 verticalSwipe={false}
             />
