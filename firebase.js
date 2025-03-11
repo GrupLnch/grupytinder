@@ -1,9 +1,9 @@
-// Import the functions you need from the SDKs
+
 import { initializeApp } from "firebase/app";
 import { initializeAuth, getReactNativePersistence } from "firebase/auth";
-import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
-// Your web app's Firebase configuration
+// Web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCOu-a77pcmlXwnKBgEm7SdJpqlpAeeLbA",
     authDomain: "grupytinder.firebaseapp.com",
