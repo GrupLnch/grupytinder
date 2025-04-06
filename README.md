@@ -15,7 +15,7 @@ machine. Ensure that Node.js, npm (or yarn), and Expo CLI are installed.
 
 #### Clone into repo
 
-`git clone https://github.com/your-username/grupytinder.git`
+`git clone https://github.com/calvin1011/grupytinder.git`
 
 `cd grupytinder`
 
