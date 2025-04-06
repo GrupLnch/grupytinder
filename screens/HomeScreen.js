@@ -1,35 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, Button, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
 import { Ionicons } from "@expo/vector-icons";
 import Swiper from "react-native-deck-swiper";
+import { fetchNearbyRestaurants } from '../utils/placesApi';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
     const { user, signOut } = useAuth();
 
     // Static data for restaurants to test swiping
-    const [restaurants] = useState([
-        {
-            id: '1',
-            name: 'Italian Bistro',
-            imageUrl: 'https://via.placeholder.com/150',
-            description: 'Authentic Italian food with great pasta and pizza options.',
-        },
-        {
-            id: '2',
-            name: 'Sushi House',
-            imageUrl: 'https://via.placeholder.com/150',
-            description: 'Delicious sushi and sashimi. A true Japanese experience.',
-        },
-        {
-            id: '3',
-            name: 'Vegan Vibes',
-            imageUrl: 'https://via.placeholder.com/150',
-            description: 'A plant-based restaurant serving healthy and tasty vegan dishes.',
-        },
-    ]);
+    const [restaurants, setRestaurants] = useState([]);
+
+    useEffect(() => {
+        const loadRestaurants = async () => {
+            const results = await fetchNearbyRestaurants('37.7749,-122.4194'); // use mock location for now
+            setRestaurants(results);
+        };
+
+        loadRestaurants();
+    }, []);
 
     const handleSignOut = async () => {
         await signOut();

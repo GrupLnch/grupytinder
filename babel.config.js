@@ -1,4 +1,4 @@
-module.exports = function(api) {
+module.exports = function (api) {
   api.cache(true);
   return {
     presets: [
@@ -10,14 +10,26 @@ module.exports = function(api) {
     plugins: [
       "@babel/plugin-transform-runtime",
       [
-        "module-resolver", {
-        root: ["./"],
-        alias: {
-          "screens": "./screens",
-          "components": "./components",
-          "hooks": "./hooks"
+        "module-resolver",
+        {
+          root: ["./"],
+          alias: {
+            "screens": "./screens",
+            "components": "./components",
+            "hooks": "./hooks"
+          }
         }
-      }
+      ],
+      [
+        "module:react-native-dotenv",
+        {
+          moduleName: "@env",
+          path: ".env",
+          blocklist: null,
+          allowlist: null,
+          safe: false,
+          allowUndefined: true
+        }
       ]
     ],
     env: {
