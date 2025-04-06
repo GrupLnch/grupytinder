@@ -2,23 +2,23 @@ module.exports = function (api) {
   api.cache(true);
   return {
     presets: [
+      ["@babel/preset-typescript"],
       ["babel-preset-expo", { jsxImportSource: "nativewind" }],
-      "@babel/preset-typescript",
       ["@babel/preset-react", { runtime: "automatic" }],
-      "nativewind/babel"
+      "nativewind/babel",
     ],
     plugins: [
       "@babel/plugin-transform-runtime",
       [
         "module-resolver",
         {
-          root: ["./"],
+          root: ["<rootDir>"],
           alias: {
-            "screens": "./screens",
-            "components": "./components",
-            "hooks": "./hooks"
-          }
-        }
+            screens: "<rootDir>/screens",
+            components: "<rootDir>/components",
+            hooks: "<rootDir>/hooks",
+          },
+        },
       ],
       [
         "module:react-native-dotenv",
@@ -28,14 +28,20 @@ module.exports = function (api) {
           blocklist: null,
           allowlist: null,
           safe: false,
-          allowUndefined: true
-        }
-      ]
+          allowUndefined: true,
+        },
+      ],
     ],
     env: {
       test: {
-        plugins: ["@babel/plugin-transform-runtime"]
-      }
-    }
+        presets: [
+          [
+            "@babel/preset-env",
+            { modules: "commonjs", targets: { node: "current" } },
+          ],
+        ],
+        plugins: ["@babel/plugin-transform-runtime"],
+      },
+    },
   };
 };
