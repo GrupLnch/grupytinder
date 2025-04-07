@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, Button, SafeAreaView, TouchableOpacity, Image } from 'react-native';
+import { Text, View, Button, SafeAreaView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import * as Location from 'expo-location';
 import useAuth from '../hooks/useAuth';
 import { Ionicons } from "@expo/vector-icons";
 import Swiper from "react-native-deck-swiper";
@@ -9,17 +10,26 @@ import { fetchNearbyRestaurants } from '../utils/placesApi';
 const HomeScreen = () => {
     const navigation = useNavigation();
     const { user, signOut } = useAuth();
-
-    // Static data for restaurants to test swiping
     const [restaurants, setRestaurants] = useState([]);
 
     useEffect(() => {
         const loadRestaurants = async () => {
-            const results = await fetchNearbyRestaurants('37.7749,-122.4194'); // use mock location for now
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Using default location');
+                const mockLocation = '37.7749,-122.4194';
+                const results = await fetchNearbyRestaurants(mockLocation);
+                setRestaurants(results);
+                return;
+            }
+
+            const location = await Location.getCurrentPositionAsync({});
+            const coords = `${location.coords.latitude},${location.coords.longitude}`;
+            const results = await fetchNearbyRestaurants(coords);
             setRestaurants(results);
         };
 
-        loadRestaurants();
+        void loadRestaurants();
     }, []);
 
     const handleSignOut = async () => {
