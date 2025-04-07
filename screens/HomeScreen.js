@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Text, View, Button, SafeAreaView, TouchableOpacity, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
@@ -11,6 +11,8 @@ const HomeScreen = () => {
     const navigation = useNavigation();
     const { user, signOut } = useAuth();
     const [restaurants, setRestaurants] = useState([]);
+    const [swipedCards, setSwipedCards] = useState([]);
+    const swiperRef = useRef(null);
 
     useEffect(() => {
         const loadRestaurants = async () => {
@@ -36,6 +38,26 @@ const HomeScreen = () => {
     const handleSignOut = async () => {
         await signOut();
         navigation.navigate('Login');
+    };
+
+    const renderCard = (card) => {
+        if (!card) return <Text>No card data</Text>;
+
+        const photoReference = card.photos?.[0]?.photo_reference;
+        const imageUrl = photoReference
+            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+            : 'https://via.placeholder.com/150';
+
+        return (
+            <View className="flex-1 justify-center items-center bg-white p-4 rounded-lg shadow-lg">
+                <Image
+                    source={{ uri: imageUrl }}
+                    className="h-48 w-48 rounded-lg"
+                />
+                <Text className="text-xl font-semibold mt-2">{card.name || 'Unknown'}</Text>
+                <Text className="text-center mt-1">{card.description || 'No description'}</Text>
+            </View>
+        );
     };
 
     return (
@@ -68,23 +90,23 @@ const HomeScreen = () => {
             {/* Cards */}
             {restaurants.length > 0 ? (
                 <Swiper
+                    ref={swiperRef}
                     cards={restaurants}
-                    renderCard={(card) => {
-                        if (!card) return <Text>No card data</Text>;
-
-                        return (
-                            <View className="flex-1 justify-center items-center bg-white p-4 rounded-lg shadow-lg">
-                                <Image
-                                    source={{ uri: card.imageUrl || 'https://via.placeholder.com/150' }}
-                                    className="h-48 w-48 rounded-lg"
-                                />
-                                <Text className="text-xl font-semibold mt-2">{card.name || 'Unknown'}</Text>
-                                <Text className="text-center mt-1">{card.description || 'No description'}</Text>
-                            </View>
-                        );
+                    renderCard={renderCard}
+                    onSwipedLeft={(index) => {
+                        setSwipedCards(prev => [restaurants[index], ...prev]);
+                        console.log('Swiped left');
                     }}
-                    onSwipedLeft={() => console.log('Swiped left')}
-                    onSwipedRight={() => console.log('Swiped right')}
+                    onSwipedRight={(index) => {
+                        setSwipedCards(prev => [restaurants[index], ...prev]);
+                        console.log('Swiped right');
+                    }}
+                    onSwipedAll={() => {
+                        if (swipedCards.length > 0) {
+                            setRestaurants(swipedCards);
+                            setSwipedCards([]);
+                        }
+                    }}
                     backgroundColor="#f0f0f0"
                     cardIndex={0}
                     stackSize={3}
