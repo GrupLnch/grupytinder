@@ -11,6 +11,7 @@ console.log("GOOGLE_PLACES_API_KEY Loaded:", GOOGLE_PLACES_API_KEY || 'undefined
 export const fetchNearbyRestaurants = async (location, radius = 1500) => {
     try {
         const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=${radius}&type=restaurant&key=${GOOGLE_PLACES_API_KEY}`;
+        console.log("🛰️ Final URL to fetch:", url);
         const response = await fetch(url);
 
         if (!response.ok) {

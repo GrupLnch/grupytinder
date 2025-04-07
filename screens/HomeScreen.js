@@ -25,6 +25,7 @@ const HomeScreen = () => {
 
             const location = await Location.getCurrentPositionAsync({});
             const coords = `${location.coords.latitude},${location.coords.longitude}`;
+            console.log("📍 User Location:", coords);
             const results = await fetchNearbyRestaurants(coords);
             setRestaurants(results);
         };
