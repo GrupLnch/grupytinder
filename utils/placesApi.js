@@ -1,5 +1,6 @@
 import { GOOGLE_PLACES_API_KEY } from '@env';
 
+// returns our API key
 console.log("GOOGLE_PLACES_API_KEY Loaded:", GOOGLE_PLACES_API_KEY || 'undefined');
 /**
  * Fetch nearby restaurants from Google Places API
