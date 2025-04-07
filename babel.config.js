@@ -12,11 +12,11 @@ module.exports = function (api) {
       [
         "module-resolver",
         {
-          root: ["<rootDir>"],
+          root: ["./"],
           alias: {
-            screens: "<rootDir>/screens",
-            components: "<rootDir>/components",
-            hooks: "<rootDir>/hooks",
+            screens: "./screens",
+            components: "./components",
+            hooks: "./hooks",
           },
         },
       ],

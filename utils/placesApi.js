@@ -1,4 +1,6 @@
 import { GOOGLE_PLACES_API_KEY } from '@env';
+
+console.log("GOOGLE_PLACES_API_KEY Loaded:", GOOGLE_PLACES_API_KEY || 'undefined');
 /**
  * Fetch nearby restaurants from Google Places API
  * @param {string} location - The latitude and longitude (e.g., "37.7749,-122.4194")
