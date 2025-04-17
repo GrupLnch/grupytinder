@@ -49,12 +49,13 @@ const HomeScreen = () => {
             : 'https://via.placeholder.com/150';
 
         return (
-            <View className="flex-1 justify-center items-center bg-white p-4 rounded-lg shadow-lg">
+            <View className="h-[320px] w-full justify-center items-center bg-white p-4 rounded-2xl shadow-xl">
                 <Image
                     source={{ uri: imageUrl }}
-                    className="h-48 w-48 rounded-lg"
+                    className="h-60 w-60 rounded-2xl"
+                    resizeMode="cover"
                 />
-                <Text className="text-xl font-semibold mt-2">{card.name || 'Unknown'}</Text>
+                <Text className="text-xl font-semibold mt-4">{card.name || 'Unknown'}</Text>
                 <Text className="text-center mt-1">{card.description || 'No description'}</Text>
             </View>
         );
@@ -88,36 +89,38 @@ const HomeScreen = () => {
             {/* End of Header */}
 
             {/* Cards */}
-            {restaurants.length > 0 ? (
-                <Swiper
-                    ref={swiperRef}
-                    cards={restaurants}
-                    renderCard={renderCard}
-                    onSwipedLeft={(index) => {
-                        setSwipedCards(prev => [restaurants[index], ...prev]);
-                        console.log('Swiped left');
-                    }}
-                    onSwipedRight={(index) => {
-                        setSwipedCards(prev => [restaurants[index], ...prev]);
-                        console.log('Swiped right');
-                    }}
-                    onSwipedAll={() => {
-                        if (swipedCards.length > 0) {
-                            setRestaurants(swipedCards);
-                            setSwipedCards([]);
-                        }
-                    }}
-                    backgroundColor="#f0f0f0"
-                    cardIndex={0}
-                    stackSize={3}
-                    animateCardOpacity
-                    verticalSwipe={false}
-                />
-            ) : (
-                <View className="flex-1 justify-center items-center">
-                    <Text>Loading restaurants...</Text>
-                </View>
-            )}
+            <View className="flex justify-center items-center px-4 mt-4 mb-2 h-[75%]">
+                {restaurants.length > 0 ? (
+                    <Swiper
+                        ref={swiperRef}
+                        cards={restaurants}
+                        renderCard={renderCard}
+                        onSwipedLeft={(index) => {
+                            setSwipedCards(prev => [restaurants[index], ...prev]);
+                            console.log('Swiped left');
+                        }}
+                        onSwipedRight={(index) => {
+                            setSwipedCards(prev => [restaurants[index], ...prev]);
+                            console.log('Swiped right');
+                        }}
+                        onSwipedAll={() => {
+                            if (swipedCards.length > 0) {
+                                setRestaurants(swipedCards);
+                                setSwipedCards([]);
+                            }
+                        }}
+                        backgroundColor="#f0f0f0"
+                        cardIndex={0}
+                        stackSize={3}
+                        animateCardOpacity
+                        verticalSwipe={false}
+                    />
+                ) : (
+                    <View className="flex-1 justify-center items-center">
+                        <Text>Loading restaurants...</Text>
+                    </View>
+                )}
+            </View>
 
             {/* Log Out Button */}
             <View className="px-4 py-2 absolute bottom-4 w-full">
