@@ -49,10 +49,10 @@ const HomeScreen = () => {
             : 'https://via.placeholder.com/150';
 
         return (
-            <View className="flex-1 justify-center items-center bg-white p-4 rounded-lg shadow-lg">
+            <View className="h-[320px] w-full justify-center items-center bg-white p-4 rounded-lg shadow-lg">
                 <Image
                     source={{ uri: imageUrl }}
-                    className="h-48 w-48 rounded-lg"
+                    className="h-40 w-40 rounded-lg"
                 />
                 <Text className="text-xl font-semibold mt-2">{card.name || 'Unknown'}</Text>
                 <Text className="text-center mt-1">{card.description || 'No description'}</Text>
@@ -88,7 +88,7 @@ const HomeScreen = () => {
             {/* End of Header */}
 
             {/* Cards */}
-            <View className="flex` mt-5 mb-20">
+            <View className="flex justify-center items-center px-4 mt-4 mb-2 h-[75%]">
                 {restaurants.length > 0 ? (
                     <Swiper
                         ref={swiperRef}
