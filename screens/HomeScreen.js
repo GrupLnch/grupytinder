@@ -49,12 +49,13 @@ const HomeScreen = () => {
             : 'https://via.placeholder.com/150';
 
         return (
-            <View className="h-[320px] w-full justify-center items-center bg-white p-4 rounded-lg shadow-lg">
+            <View className="h-[320px] w-full justify-center items-center bg-white p-4 rounded-2xl shadow-xl">
                 <Image
                     source={{ uri: imageUrl }}
-                    className="h-40 w-40 rounded-lg"
+                    className="h-60 w-60 rounded-2xl"
+                    resizeMode="cover"
                 />
-                <Text className="text-xl font-semibold mt-2">{card.name || 'Unknown'}</Text>
+                <Text className="text-xl font-semibold mt-4">{card.name || 'Unknown'}</Text>
                 <Text className="text-center mt-1">{card.description || 'No description'}</Text>
             </View>
         );
