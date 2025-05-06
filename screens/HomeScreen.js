@@ -83,6 +83,18 @@ const HomeScreen = () => {
                     </Text>
                 )}
 
+                <TouchableOpacity
+                    onPress={() => {
+                        const { lat, lng } = card.geometry?.location || {};
+                        if (lat && lng) {
+                            const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                            Linking.openURL(url);
+                        }
+                    }}
+                    className="mt-2"
+                >
+                    <Text className="text-blue-500 underline text-sm">Get Directions</Text>
+                </TouchableOpacity>
 
             </View>
         );
