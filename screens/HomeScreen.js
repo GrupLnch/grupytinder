@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, Button, SafeAreaView, TouchableOpacity, Image, Alert } from 'react-native';
+import { Text, View, Button, SafeAreaView, TouchableOpacity, Image, Alert, Linking} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import useAuth from '../hooks/useAuth';
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Swiper from "react-native-deck-swiper";
 import { fetchNearbyRestaurants } from '../utils/placesApi';
 
@@ -48,6 +48,15 @@ const HomeScreen = () => {
             ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
             : 'https://via.placeholder.com/150';
 
+        const description = card.types
+            ?.map(type => type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
+            .join(", ") || 'No info available';
+
+        const openNow = card.opening_hours?.open_now;
+        const status = card.business_status || 'Status Unknown';
+        const rating = card.rating;
+        const ratingsTotal = card.user_ratings_total;
+
         return (
             <View className="h-[320px] w-full justify-center items-center bg-white p-4 rounded-2xl shadow-xl">
                 <Image
@@ -55,8 +64,26 @@ const HomeScreen = () => {
                     className="h-60 w-60 rounded-2xl"
                     resizeMode="cover"
                 />
-                <Text className="text-xl font-semibold mt-4">{card.name || 'Unknown'}</Text>
-                <Text className="text-center mt-1">{card.description || 'No description'}</Text>
+
+                <Text className="text-xl font-semibold mt-2 text-center">
+                    {card.name || 'Unknown'}
+                </Text>
+
+                <Text className="text-center mt-1 text-gray-600 text-sm">
+                    {status} {openNow !== undefined && `| ${openNow ? 'Open Now' : 'Closed'}`}
+                </Text>
+
+                <Text className="text-center mt-1 text-gray-600 text-sm">
+                    {description}
+                </Text>
+
+                {rating && (
+                    <Text className="text-center mt-1 text-gray-500 text-xs">
+                        ⭐ {rating} ({ratingsTotal} reviews)
+                    </Text>
+                )}
+
+
             </View>
         );
     };
