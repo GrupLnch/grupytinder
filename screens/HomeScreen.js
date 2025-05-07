@@ -3,7 +3,7 @@ import { Text, View, Button, SafeAreaView, TouchableOpacity, Image, Alert, Linki
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import useAuth from '../hooks/useAuth';
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import Swiper from "react-native-deck-swiper";
 import { fetchNearbyRestaurants } from '../utils/placesApi';
 
@@ -163,6 +163,31 @@ const HomeScreen = () => {
                         <Text>Loading restaurants...</Text>
                     </View>
                 )}
+            </View>
+
+            {/* Like/Dislike Buttons */}
+            <View className="flex-row justify-center items-center space-x-10 py-4">
+                <TouchableOpacity
+                    className="bg-red-100 w-16 h-16 rounded-full justify-center items-center shadow-md"
+                    onPress={() => {
+                        if (swiperRef.current) {
+                            swiperRef.current.swipeLeft();
+                        }
+                    }}
+                >
+                    <AntDesign name="close" size={30} color="#FF3B30" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    className="bg-green-100 w-16 h-16 rounded-full justify-center items-center shadow-md"
+                    onPress={() => {
+                        if (swiperRef.current) {
+                            swiperRef.current.swipeRight();
+                        }
+                    }}
+                >
+                    <AntDesign name="heart" size={30} color="#34C759" />
+                </TouchableOpacity>
             </View>
 
             {/* Log Out Button */}
