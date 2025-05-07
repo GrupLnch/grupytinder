@@ -132,7 +132,7 @@ const HomeScreen = () => {
             {/* End of Header */}
 
             {/* Cards */}
-            <View className="flex justify-center items-center px-4 mt-4 mb-2 h-[75%]">
+            <View className="flex justify-center items-center px-4 mt-4 mb-2 h-[60%]">
                 {restaurants.length > 0 ? (
                     <Swiper
                         ref={swiperRef}
@@ -166,7 +166,7 @@ const HomeScreen = () => {
             </View>
 
             {/* Like/Dislike Buttons */}
-            <View className="flex-row justify-center items-center space-x-10 py-4">
+            <View className="flex-row justify-center items-center space-x-10 py-2 mb-8">
                 <TouchableOpacity
                     className="bg-red-100 w-16 h-16 rounded-full justify-center items-center shadow-md"
                     onPress={() => {
