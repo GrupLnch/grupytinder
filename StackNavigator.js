@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from "react-native";
 import HomeScreen from "./screens/HomeScreen";
 import ChatScreen from "./screens/ChatScreen";
 import LoginScreen from "./screens/LoginScreen";
+import FavoritesScreen from "./screens/FavoritesScreen";
 import useAuth from "./hooks/useAuth";
 
 const Stack = createNativeStackNavigator();
@@ -21,16 +22,29 @@ const StackNavigator = () => {
     }
 
     return (
-        <Stack.Navigator id="MainStackNavigator">
+        <Stack.Navigator
+            id="MainStackNavigator"
+            // Hide the header globally for simplicity, you can add options to individual screens
+            screenOptions={{
+                headerShown: false
+            }}
+        >
             {user ? (
                 <>
                     <Stack.Screen
                         name="Home"
                         component={HomeScreen}
+                        // You can override global options like this if needed
+                        // options={{ headerShown: true }}
                     />
                     <Stack.Screen
                         name="Chat"
                         component={ChatScreen}
+                    />
+                    {/* Add the FavoritesScreen here */}
+                    <Stack.Screen
+                        name="Favorites"
+                        component={FavoritesScreen}
                     />
                 </>
             ) : (

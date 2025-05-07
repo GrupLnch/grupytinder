@@ -6,14 +6,18 @@ import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import Swiper from "react-native-deck-swiper";
 import { fetchNearbyRestaurants } from '../utils/placesApi';
+import { doc, setDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
     const { user, signOut } = useAuth();
     const [restaurants, setRestaurants] = useState([]);
     const [swipedCards, setSwipedCards] = useState([]);
+    const [likedRestaurants, setLikedRestaurants] = useState([]);
     const swiperRef = useRef(null);
 
+    // Load restaurants based on location
     useEffect(() => {
         const loadRestaurants = async () => {
             let { status } = await Location.requestForegroundPermissionsAsync();
@@ -34,6 +38,95 @@ const HomeScreen = () => {
 
         void loadRestaurants();
     }, []);
+
+    // Load liked restaurants from Firebase
+    useEffect(() => {
+        const fetchLikedRestaurants = async () => {
+            if (!user?.uid) return;
+
+            try {
+                const q = query(
+                    collection(db, "users", user.uid, "likedRestaurants")
+                );
+
+                const querySnapshot = await getDocs(q);
+                const likedPlaces = [];
+
+                querySnapshot.forEach((doc) => {
+                    likedPlaces.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                setLikedRestaurants(likedPlaces);
+                console.log(`Loaded ${likedPlaces.length} liked restaurants`);
+            } catch (error) {
+                console.error("Error fetching liked restaurants:", error);
+            }
+        };
+
+        fetchLikedRestaurants();
+    }, [user]);
+
+    // Save a restaurant to Firebase when liked
+    const saveLikedRestaurant = async (restaurant) => {
+        if (!user?.uid) {
+            Alert.alert("Not logged in", "Please login to save favorites");
+            return;
+        }
+
+        try {
+            // Prepare restaurant data (keep only what we need)
+            const restaurantData = {
+                place_id: restaurant.place_id,
+                name: restaurant.name,
+                vicinity: restaurant.vicinity,
+                rating: restaurant.rating,
+                user_ratings_total: restaurant.user_ratings_total,
+                photos: restaurant.photos,
+                geometry: restaurant.geometry,
+                opening_hours: restaurant.opening_hours,
+                savedAt: new Date().toISOString(),
+            };
+
+            // Save to Firestore
+            await setDoc(
+                doc(db, "users", user.uid, "likedRestaurants", restaurant.place_id),
+                restaurantData
+            );
+
+            // Update local state
+            setLikedRestaurants(prev => [...prev, restaurantData]);
+
+            console.log("Liked and saved:", restaurant.name);
+        } catch (error) {
+            console.error("Error saving liked restaurant:", error);
+            Alert.alert("Error", "Failed to save restaurant to favorites");
+        }
+    };
+
+    // Remove a restaurant from Firebase when disliked
+    const removeRestaurantFromLikes = async (restaurant) => {
+        if (!user?.uid || !restaurant?.place_id) return;
+
+        try {
+            // Check if this restaurant was previously liked
+            const isLiked = likedRestaurants.some(r => r.place_id === restaurant.place_id);
+
+            if (isLiked) {
+                // Delete from Firestore
+                await deleteDoc(doc(db, "users", user.uid, "likedRestaurants", restaurant.place_id));
+
+                // Update local state
+                setLikedRestaurants(prev => prev.filter(r => r.place_id !== restaurant.place_id));
+
+                console.log("Removed from likes:", restaurant.name);
+            }
+        } catch (error) {
+            console.error("Error removing restaurant from likes:", error);
+        }
+    };
 
     const handleSignOut = async () => {
         await signOut();
@@ -57,6 +150,9 @@ const HomeScreen = () => {
         const supportsTakeout = Math.random() > 0.3;
         const supportsDineIn = Math.random() > 0.7;
 
+        // Check if this restaurant is already liked
+        const isAlreadyLiked = likedRestaurants.some(r => r.place_id === card.place_id);
+
         return (
             <View className="h-[320px] w-full justify-center items-center bg-white p-4 rounded-2xl shadow-xl">
                 <Image
@@ -67,6 +163,7 @@ const HomeScreen = () => {
 
                 <Text className="text-xl font-semibold mt-2 text-center">
                     {card.name || 'Unknown'}
+                    {isAlreadyLiked && " ❤️"}
                 </Text>
 
                 <Text className="text-center mt-1 text-gray-600 text-sm">
@@ -125,8 +222,11 @@ const HomeScreen = () => {
                 </View>
 
                 {/* Chat Icon */}
-                <TouchableOpacity testID="chat-icon" onPress={() => navigation.navigate('Chat')}>
-                    <Ionicons name="chatbubbles-sharp" size={30} color="#333" />
+                <TouchableOpacity
+                    testID="favorites-icon"
+                    onPress={() => navigation.navigate('Favorites', { likedRestaurants })}
+                >
+                    <MaterialIcons name="favorite" size={30} color="#FF3B30" />
                 </TouchableOpacity>
             </View>
             {/* End of Header */}
@@ -139,12 +239,16 @@ const HomeScreen = () => {
                         cards={restaurants}
                         renderCard={renderCard}
                         onSwipedLeft={(index) => {
-                            setSwipedCards(prev => [restaurants[index], ...prev]);
-                            console.log('Swiped left');
+                            const restaurant = restaurants[index];
+                            setSwipedCards(prev => [restaurant, ...prev]);
+                            removeRestaurantFromLikes(restaurant);
+                            console.log('Swiped left (disliked):', restaurant.name);
                         }}
                         onSwipedRight={(index) => {
-                            setSwipedCards(prev => [restaurants[index], ...prev]);
-                            console.log('Swiped right');
+                            const restaurant = restaurants[index];
+                            setSwipedCards(prev => [restaurant, ...prev]);
+                            saveLikedRestaurant(restaurant);
+                            console.log('Swiped right (liked):', restaurant.name);
                         }}
                         onSwipedAll={() => {
                             if (swipedCards.length > 0) {
