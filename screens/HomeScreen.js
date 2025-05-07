@@ -48,14 +48,14 @@ const HomeScreen = () => {
             ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
             : 'https://via.placeholder.com/150';
 
-        const description = card.types
-            ?.map(type => type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
-            .join(", ") || 'No info available';
-
         const openNow = card.opening_hours?.open_now;
-        const status = card.business_status || 'Status Unknown';
         const rating = card.rating;
         const ratingsTotal = card.user_ratings_total;
+
+        // Mock service availability randomly for now (takeout, delivery, dineIn)
+        const supportsDelivery = Math.random() > 0.5;
+        const supportsTakeout = Math.random() > 0.3;
+        const supportsDineIn = Math.random() > 0.7;
 
         return (
             <View className="h-[320px] w-full justify-center items-center bg-white p-4 rounded-2xl shadow-xl">
@@ -70,11 +70,7 @@ const HomeScreen = () => {
                 </Text>
 
                 <Text className="text-center mt-1 text-gray-600 text-sm">
-                    {status} {openNow !== undefined && `| ${openNow ? 'Open Now' : 'Closed'}`}
-                </Text>
-
-                <Text className="text-center mt-1 text-gray-600 text-sm">
-                    {description}
+                    {openNow !== undefined ? (openNow ? 'Open Now' : 'Closed') : 'Status Unknown'}
                 </Text>
 
                 {rating && (
@@ -83,19 +79,27 @@ const HomeScreen = () => {
                     </Text>
                 )}
 
-                <TouchableOpacity
-                    onPress={() => {
-                        const { lat, lng } = card.geometry?.location || {};
-                        if (lat && lng) {
-                            const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-                            Linking.openURL(url);
-                        }
-                    }}
-                    className="mt-2"
-                >
-                    <Text className="text-blue-500 underline text-sm">Get Directions</Text>
-                </TouchableOpacity>
+                <View className="flex-row justify-between items-center mt-2 w-full px-4">
+                    {/* Service Options */}
+                    <View className="flex-row space-x-2">
+                        {supportsDelivery && <Text className="text-xs">🚗</Text>}
+                        {supportsTakeout && <Text className="text-xs">🥡</Text>}
+                        {supportsDineIn && <Text className="text-xs">🍽️</Text>}
+                    </View>
 
+                    {/* Directions Icon */}
+                    <TouchableOpacity
+                        onPress={() => {
+                            const { lat, lng } = card.geometry?.location || {};
+                            if (lat && lng) {
+                                const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                                Linking.openURL(url);
+                            }
+                        }}
+                    >
+                        <MaterialIcons name="directions" size={24} color="#4285F4" />
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     };
