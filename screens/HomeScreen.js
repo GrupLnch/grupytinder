@@ -154,48 +154,50 @@ const HomeScreen = () => {
         const isAlreadyLiked = likedRestaurants.some(r => r.place_id === card.place_id);
 
         return (
-            <View className="h-[320px] w-full justify-center items-center bg-white p-4 rounded-2xl shadow-xl">
+            <View className="h-[420px] w-[340px] justify-center items-center bg-white rounded-3xl shadow-2xl border border-gray-100">
                 <Image
                     source={{ uri: imageUrl }}
-                    className="h-60 w-60 rounded-2xl"
+                    className="h-72 w-80 rounded-2xl"
                     resizeMode="cover"
                 />
 
-                <Text className="text-xl font-semibold mt-2 text-center">
-                    {card.name || 'Unknown'}
-                    {isAlreadyLiked && " ❤️"}
-                </Text>
-
-                <Text className="text-center mt-1 text-gray-600 text-sm">
-                    {openNow !== undefined ? (openNow ? 'Open Now' : 'Closed') : 'Status Unknown'}
-                </Text>
-
-                {rating && (
-                    <Text className="text-center mt-1 text-gray-500 text-xs">
-                        ⭐ {rating} ({ratingsTotal} reviews)
+                <View className="px-4 mt-4 w-full">
+                    <Text className="text-xl font-bold text-center text-gray-800">
+                        {card.name || 'Unknown'}
+                        {isAlreadyLiked && " ❤️"}
                     </Text>
-                )}
 
-                <View className="flex-row justify-between items-center mt-2 w-full px-4">
-                    {/* Service Options */}
-                    <View className="flex-row space-x-2">
-                        {supportsDelivery && <Text className="text-xs">🚗</Text>}
-                        {supportsTakeout && <Text className="text-xs">🥡</Text>}
-                        {supportsDineIn && <Text className="text-xs">🍽️</Text>}
+                    <Text className="text-center mt-1 text-gray-600 text-sm">
+                        {openNow !== undefined ? (openNow ? 'Open Now' : 'Closed') : 'Status Unknown'}
+                    </Text>
+
+                    {rating && (
+                        <Text className="text-center mt-1 text-gray-500 text-sm">
+                            ⭐ {rating} ({ratingsTotal} reviews)
+                        </Text>
+                    )}
+
+                    <View className="flex-row justify-between items-center mt-3 px-2">
+                        {/* Service Options */}
+                        <View className="flex-row space-x-3">
+                            {supportsDelivery && <Text className="text-sm">🚗</Text>}
+                            {supportsTakeout && <Text className="text-sm">🥡</Text>}
+                            {supportsDineIn && <Text className="text-sm">🍽️</Text>}
+                        </View>
+
+                        {/* Directions Icon */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                const { lat, lng } = card.geometry?.location || {};
+                                if (lat && lng) {
+                                    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                                    Linking.openURL(url);
+                                }
+                            }}
+                        >
+                            <MaterialIcons name="directions" size={26} color="#4285F4" />
+                        </TouchableOpacity>
                     </View>
-
-                    {/* Directions Icon */}
-                    <TouchableOpacity
-                        onPress={() => {
-                            const { lat, lng } = card.geometry?.location || {};
-                            if (lat && lng) {
-                                const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-                                Linking.openURL(url);
-                            }
-                        }}
-                    >
-                        <MaterialIcons name="directions" size={24} color="#4285F4" />
-                    </TouchableOpacity>
                 </View>
             </View>
         );
@@ -213,12 +215,11 @@ const HomeScreen = () => {
                     />
                 </TouchableOpacity>
 
-                {/* Centered Logo */}
+                {/* Centered Logo - Text instead of image */}
                 <View className="flex-1 items-center">
-                    <Image
-                        source={require("../media/Logo 1 (So cool).png")}
-                        className="h-14 w-14"
-                    />
+                    <Text className="text-2xl font-bold text-orange-500" style={{ fontFamily: 'System' }}>
+                        Grup Lnch
+                    </Text>
                 </View>
 
                 {/* Empty space to balance the header layout */}
@@ -227,7 +228,7 @@ const HomeScreen = () => {
             {/* End of Header */}
 
             {/* Cards */}
-            <View className="flex justify-center items-center px-4 mt-4 mb-2 h-[60%]">
+            <View className="flex justify-center items-center px-4 mt-2 mb-4 h-[65%]">
                 {restaurants.length > 0 ? (
                     <Swiper
                         ref={swiperRef}
@@ -251,11 +252,18 @@ const HomeScreen = () => {
                                 setSwipedCards([]);
                             }
                         }}
-                        backgroundColor="#f0f0f0"
+                        backgroundColor="transparent"
                         cardIndex={0}
-                        stackSize={3}
-                        animateCardOpacity
+                        stackSize={1}
+                        stackSeparation={0}
+                        animateCardOpacity={false}
                         verticalSwipe={false}
+                        cardVerticalMargin={0}
+                        cardHorizontalMargin={0}
+                        marginTop={0}
+                        marginBottom={0}
+                        showSecondCard={false}
+                        useViewOverflow={false}
                     />
                 ) : (
                     <View className="flex-1 justify-center items-center">
