@@ -139,12 +139,9 @@ const FavoritesScreen = () => {
 
     return (
         <SafeAreaView className="flex-1 bg-gray-100">
-            {/* Header */}
-            <View className="flex-row items-center p-4 bg-white shadow-sm">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text className="text-xl font-bold flex-1">Favorite Restaurants</Text>
+            {/* Header - Simplified without back button */}
+            <View className="flex-row items-center justify-center p-4 bg-white shadow-sm">
+                <Text className="text-xl font-bold">Favorite Restaurants</Text>
             </View>
 
             {/* Loading Indicator */}
@@ -163,7 +160,7 @@ const FavoritesScreen = () => {
                                 You haven't favorited any restaurants yet.
                             </Text>
                             <Text className="text-gray-500 mt-2 text-center">
-                                Swipe right on the Home screen to add favorites!
+                                Swipe right on the Discover tab to add favorites!
                             </Text>
                         </View>
                     )}

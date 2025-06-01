@@ -203,7 +203,7 @@ const HomeScreen = () => {
 
     return (
         <SafeAreaView testID="home-screen-view" className="flex-1 bg-white">
-            {/* Header */}
+            {/* Header - Simplified, only profile and logo */}
             <View className="flex-row justify-between items-center px-4 py-4">
                 {/* Profile Icon */}
                 <TouchableOpacity>
@@ -221,13 +221,8 @@ const HomeScreen = () => {
                     />
                 </View>
 
-                {/* Chat Icon */}
-                <TouchableOpacity
-                    testID="favorites-icon"
-                    onPress={() => navigation.navigate('Favorites', { likedRestaurants })}
-                >
-                    <MaterialIcons name="favorite" size={30} color="#FF3B30" />
-                </TouchableOpacity>
+                {/* Empty space to balance the header layout */}
+                <View className="w-12" />
             </View>
             {/* End of Header */}
 
