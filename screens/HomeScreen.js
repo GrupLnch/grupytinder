@@ -205,8 +205,8 @@ const HomeScreen = () => {
         <SafeAreaView testID="home-screen-view" className="flex-1 bg-white">
             {/* Header - Simplified, only profile and logo */}
             <View className="flex-row justify-between items-center px-4 py-4">
-                {/* Profile Icon */}
-                <TouchableOpacity>
+                {/* Profile Icon - Now clickable */}
+                <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
                     <Image
                         className="h-12 w-12 rounded-full border-2 border-gray-300"
                         source={{ uri: user?.photoURL || 'https://via.placeholder.com/150' }}
