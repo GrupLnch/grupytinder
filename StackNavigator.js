@@ -7,6 +7,7 @@ import HomeScreen from "./screens/HomeScreen";
 import ChatScreen from "./screens/ChatScreen";
 import LoginScreen from "./screens/LoginScreen";
 import FavoritesScreen from "./screens/FavoritesScreen";
+import ProfileScreen from "./screens/ProfileScreen";
 import useAuth from "./hooks/useAuth";
 
 const Stack = createNativeStackNavigator();
@@ -94,10 +95,20 @@ const StackNavigator = () => {
             }}
         >
             {user ? (
-                <Stack.Screen
-                    name="MainTabs"
-                    component={MainTabNavigator}
-                />
+                <>
+                    <Stack.Screen
+                        name="MainTabs"
+                        component={MainTabNavigator}
+                    />
+                    <Stack.Screen
+                        name="Profile"
+                        component={ProfileScreen}
+                        options={{
+                            headerShown: false,
+                            presentation: 'modal'
+                        }}
+                    />
+                </>
             ) : (
                 <Stack.Screen
                     name="Login"
