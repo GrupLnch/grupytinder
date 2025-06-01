@@ -289,13 +289,6 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Log Out Button */}
-            <View className="px-4 py-2 absolute bottom-4 w-full">
-                <Button
-                    title="Log Out"
-                    onPress={handleSignOut}
-                />
-            </View>
         </SafeAreaView>
     );
 };
