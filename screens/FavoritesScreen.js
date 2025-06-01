@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, SafeAreaView, TouchableOpacity, Image, FlatList, Alert, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
@@ -12,41 +12,49 @@ const FavoritesScreen = () => {
     const [favoriteRestaurants, setFavoriteRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchFavoriteRestaurants = async () => {
-            if (!user?.uid) {
-                setLoading(false);
-                return; // Cannot fetch without a user
-            }
+    const fetchFavoriteRestaurants = async () => {
+        if (!user?.uid) {
+            setLoading(false);
+            return; // Cannot fetch without a user
+        }
 
-            try {
-                setLoading(true);
-                const q = query(
-                    collection(db, "users", user.uid, "likedRestaurants")
-                );
+        try {
+            setLoading(true);
+            const q = query(
+                collection(db, "users", user.uid, "likedRestaurants")
+            );
 
-                const querySnapshot = await getDocs(q);
-                const favoritePlaces = [];
+            const querySnapshot = await getDocs(q);
+            const favoritePlaces = [];
 
-                querySnapshot.forEach((doc) => {
-                    favoritePlaces.push({
-                        id: doc.id, // Use doc.id as a unique key
-                        ...doc.data()
-                    });
+            querySnapshot.forEach((doc) => {
+                favoritePlaces.push({
+                    id: doc.id, // Use doc.id as a unique key
+                    ...doc.data()
                 });
+            });
 
-                setFavoriteRestaurants(favoritePlaces);
-                console.log(`Loaded ${favoritePlaces.length} favorite restaurants for user ${user.uid}`);
-            } catch (error) {
-                console.error("Error fetching favorite restaurants:", error);
-                Alert.alert("Error", "Failed to load favorite restaurants.");
-            } finally {
-                setLoading(false);
-            }
-        };
+            setFavoriteRestaurants(favoritePlaces);
+            console.log(`Loaded ${favoritePlaces.length} favorite restaurants for user ${user.uid}`);
+        } catch (error) {
+            console.error("Error fetching favorite restaurants:", error);
+            Alert.alert("Error", "Failed to load favorite restaurants.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    // Refresh favorites when screen comes into focus
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchFavoriteRestaurants();
+        }, [user])
+    );
+
+    // Initial load
+    useEffect(() => {
         fetchFavoriteRestaurants();
-    }, [user]); // Re-fetch if user changes (e.g., logs in/out)
+    }, [user]);
 
     const removeFavorite = async (restaurantId) => {
         if (!user?.uid || !restaurantId) {

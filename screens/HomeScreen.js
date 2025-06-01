@@ -154,15 +154,15 @@ const HomeScreen = () => {
         const isAlreadyLiked = likedRestaurants.some(r => r.place_id === card.place_id);
 
         return (
-            <View className="h-[420px] w-[340px] justify-center items-center bg-white rounded-3xl shadow-2xl border border-gray-100">
+            <View className="h-[400px] w-[320px] justify-center items-center bg-white rounded-3xl shadow-2xl border border-gray-100">
                 <Image
                     source={{ uri: imageUrl }}
-                    className="h-72 w-80 rounded-2xl"
+                    className="h-64 w-72 rounded-2xl"
                     resizeMode="cover"
                 />
 
-                <View className="px-4 mt-4 w-full">
-                    <Text className="text-xl font-bold text-center text-gray-800">
+                <View className="px-4 mt-3 w-full">
+                    <Text className="text-lg font-bold text-center text-gray-800">
                         {card.name || 'Unknown'}
                         {isAlreadyLiked && " ❤️"}
                     </Text>
@@ -172,14 +172,14 @@ const HomeScreen = () => {
                     </Text>
 
                     {rating && (
-                        <Text className="text-center mt-1 text-gray-500 text-sm">
+                        <Text className="text-center mt-1 text-gray-500 text-xs">
                             ⭐ {rating} ({ratingsTotal} reviews)
                         </Text>
                     )}
 
-                    <View className="flex-row justify-between items-center mt-3 px-2">
+                    <View className="flex-row justify-between items-center mt-2 px-2">
                         {/* Service Options */}
-                        <View className="flex-row space-x-3">
+                        <View className="flex-row space-x-2">
                             {supportsDelivery && <Text className="text-sm">🚗</Text>}
                             {supportsTakeout && <Text className="text-sm">🥡</Text>}
                             {supportsDineIn && <Text className="text-sm">🍽️</Text>}
@@ -195,7 +195,7 @@ const HomeScreen = () => {
                                 }
                             }}
                         >
-                            <MaterialIcons name="directions" size={26} color="#4285F4" />
+                            <MaterialIcons name="directions" size={24} color="#4285F4" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -215,11 +215,19 @@ const HomeScreen = () => {
                     />
                 </TouchableOpacity>
 
-                {/* Centered Logo - Text instead of image */}
+                {/* Centered Logo - Stylish text */}
                 <View className="flex-1 items-center">
-                    <Text className="text-2xl font-bold text-orange-500" style={{ fontFamily: 'System' }}>
+                    <Text className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text" style={{
+                        fontFamily: 'System',
+                        color: '#FF5733',
+                        textShadowColor: 'rgba(255, 87, 51, 0.3)',
+                        textShadowOffset: { width: 0, height: 2 },
+                        textShadowRadius: 4,
+                        letterSpacing: 1
+                    }}>
                         Grup Lnch
                     </Text>
+                    <View className="w-16 h-1 bg-orange-400 rounded-full mt-1" />
                 </View>
 
                 {/* Empty space to balance the header layout */}
@@ -227,8 +235,8 @@ const HomeScreen = () => {
             </View>
             {/* End of Header */}
 
-            {/* Cards */}
-            <View className="flex justify-center items-center px-4 mt-2 mb-4 h-[65%]">
+            {/* Cards - Fixed positioning */}
+            <View className="flex-1 justify-center items-center px-4 mt-2 mb-2">
                 {restaurants.length > 0 ? (
                     <Swiper
                         ref={swiperRef}
@@ -259,7 +267,7 @@ const HomeScreen = () => {
                         animateCardOpacity={false}
                         verticalSwipe={false}
                         cardVerticalMargin={0}
-                        cardHorizontalMargin={0}
+                        cardHorizontalMargin={20}
                         marginTop={0}
                         marginBottom={0}
                         showSecondCard={false}
@@ -267,13 +275,13 @@ const HomeScreen = () => {
                     />
                 ) : (
                     <View className="flex-1 justify-center items-center">
-                        <Text>Loading restaurants...</Text>
+                        <Text className="text-gray-500 text-lg">Loading restaurants...</Text>
                     </View>
                 )}
             </View>
 
             {/* Like/Dislike Buttons */}
-            <View className="flex-row justify-center items-center space-x-10 py-2 mb-8">
+            <View className="flex-row justify-center items-center space-x-10 py-4 mb-6">
                 <TouchableOpacity
                     className="bg-red-100 w-16 h-16 rounded-full justify-center items-center shadow-md"
                     onPress={() => {
