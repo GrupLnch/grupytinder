@@ -85,10 +85,15 @@ const FavoritesScreen = () => {
     };
 
     const renderItem = ({ item }) => {
+        // Safety check for item
+        if (!item) {
+            return null;
+        }
+
         const photoReference = item.photos?.[0]?.photo_reference;
         const imageUrl = photoReference
             ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
-            : 'https://via.placeholder.com/150'; // Placeholder if no photo
+            : 'https://via.placeholder.com/150';
 
         const openNow = item.opening_hours?.open_now;
         const rating = item.rating;
@@ -120,7 +125,7 @@ const FavoritesScreen = () => {
                         </Text>
                         {rating && (
                             <Text className="text-gray-500 text-xs mt-1">
-                                ⭐ {rating} ({ratingsTotal} reviews)
+                                ⭐ {rating.toString()} ({ratingsTotal ? ratingsTotal.toString() : '0'} reviews)
                             </Text>
                         )}
                     </View>
@@ -147,14 +152,14 @@ const FavoritesScreen = () => {
             {/* Loading Indicator */}
             {loading ? (
                 <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#0000ff" />
-                    <Text className="mt-2">Loading favorites...</Text>
+                    <ActivityIndicator size="large" color="#FF5733" />
+                    <Text className="mt-2 text-gray-600">Loading favorites...</Text>
                 </View>
             ) : (
                 <>
                     {/* No Favorites Message */}
                     {favoriteRestaurants.length === 0 && (
-                        <View className="flex-1 justify-center items-center p-6"> {/* Added padding */}
+                        <View className="flex-1 justify-center items-center p-6">
                             <MaterialIcons name="favorite-border" size={60} color="#ccc" />
                             <Text className="text-xl text-gray-500 mt-4 text-center">
                                 You haven't favorited any restaurants yet.
@@ -166,14 +171,13 @@ const FavoritesScreen = () => {
                     )}
 
                     {/* Grid of Favorites */}
-                    {favoriteRestaurants.length > 0 && (
+                    {favoriteRestaurants.length > 0 && Array.isArray(favoriteRestaurants) && (
                         <FlatList
                             data={favoriteRestaurants}
                             renderItem={renderItem}
-                            keyExtractor={(item) => item.id} // Use the Firebase document ID as the key
-                            numColumns={2} // <<<--- Displays items in 2 columns
-                            // columnWrapperStyle={{ justifyContent: 'space-between' }} // Optional: adjust spacing between columns - m-1 on item handles this
-                            contentContainerStyle={{ paddingHorizontal: 4, paddingVertical: 8 }} // Add padding around the grid
+                            keyExtractor={(item, index) => item?.id || `favorite-${index}`}
+                            numColumns={2}
+                            contentContainerStyle={{ paddingHorizontal: 4, paddingVertical: 8 }}
                         />
                     )}
                 </>
