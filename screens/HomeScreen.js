@@ -374,12 +374,12 @@ const HomeScreen = () => {
 
                 {/* Centered Logo - Enhanced styling */}
                 <View className="flex-1 items-center">
-                    <Text className="text-4xl font-bold" style={{
+                    <Text className="text-4xl font-extrabold" style={{
                         fontFamily: 'System',
                         color: '#FFFFFF',
-                        textShadowColor: 'rgba(0, 0, 0, 0.3)',
-                        textShadowOffset: { width: 0, height: 3 },
-                        textShadowRadius: 6,
+                        textShadowColor: 'rgba(0, 0, 0, 0.6)',
+                        textShadowOffset: { width: 0, height: 4 },
+                        textShadowRadius: 10,
                         letterSpacing: 2
                     }}>
                         Grup Lnch
@@ -390,8 +390,8 @@ const HomeScreen = () => {
 
                 {/* Filter Icon - Enhanced */}
                 <TouchableOpacity onPress={() => setShowFilters(true)}>
-                    <View className="bg-white/20 backdrop-blur-md rounded-full p-3 border border-white/30">
-                        <Ionicons name="options" size={24} color="#FFFFFF" />
+                    <View className="bg-white/30 rounded-full p-3 border border-white/40 shadow-md shadow-black/30">
+                        <Ionicons name="options" size={26} color="#FFF" style={{ textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }} />
                     </View>
                 </TouchableOpacity>
             </View>
