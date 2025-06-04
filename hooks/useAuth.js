@@ -41,8 +41,8 @@ export const AuthProvider = ({ children }) => {
                 setUser(null);
                 console.log("No active session, user is logged out.");
             }
-            setLoading(false); // Stop loading once session is determined
-        }); // Cleanup listener on component unmount
+            setLoading(false);
+        });
     }, []);
 
     // Handle Google sign-in response
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     const signInWithGoogle = async () => {
         try {
             console.log("Login button pressed");
-            console.log("Google Auth Request:", request); // Debug request object
+            console.log("Google Auth Request:", request);
             setLoading(true);
             const result = await promptAsync();
             console.log("promptAsync result:", result); // Log the result of the promptAsync call

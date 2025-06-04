@@ -120,7 +120,6 @@ const FavoritesScreen = () => {
                 }}>
                     <Image
                         source={{ uri: imageUrl }}
-                        // Fixed height, width fills its container
                         className="h-32 w-full"
                         resizeMode="cover"
                     />
@@ -139,9 +138,8 @@ const FavoritesScreen = () => {
                     </View>
                 </TouchableOpacity>
 
-                {/* Remove button - Positioned absolutely at top right */}
                 <TouchableOpacity
-                    onPress={() => removeFavorite(item.id)} // Use item.id (which is place_id from Firebase)
+                    onPress={() => removeFavorite(item.id)}
                     className="absolute top-1 right-1 bg-red-500 rounded-full p-1 opacity-80"
                 >
                     <MaterialIcons name="close" size={18} color="#fff" />
@@ -152,7 +150,6 @@ const FavoritesScreen = () => {
 
     return (
         <SafeAreaView className="flex-1 bg-gray-100">
-            {/* Header - Simplified without back button */}
             <View className="flex-row items-center justify-center p-4 bg-white shadow-sm">
                 <Text className="text-xl font-bold">Favorite Restaurants</Text>
             </View>
