@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { ActivityIndicator, View } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import HomeScreen from "./screens/HomeScreen";
-import ChatScreen from "./screens/ChatScreen";
+//import ChatScreen from "./screens/ChatScreen";
 import LoginScreen from "./screens/LoginScreen";
 import FavoritesScreen from "./screens/FavoritesScreen";
 import ProfileScreen from "./screens/ProfileScreen";
@@ -57,13 +57,13 @@ const MainTabNavigator = () => {
                     tabBarLabel: 'Discover',
                 }}
             />
-            <Tab.Screen
+            {/*<Tab.Screen
                 name="Chat"
                 component={ChatScreen}
                 options={{
                     tabBarLabel: 'Chat',
                 }}
-            />
+            />*/}
             <Tab.Screen
                 name="Favorites"
                 component={FavoritesScreen}

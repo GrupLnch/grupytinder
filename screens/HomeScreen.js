@@ -351,13 +351,11 @@ const HomeScreen = () => {
     };
 
     return (
-        <SafeAreaView testID="home-screen-view" className="flex-1" style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }}>
-            {/* Background Gradient */}
-            <View className="absolute inset-0" style={{
-                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%)'
-            }} />
+        <SafeAreaView testID="home-screen-view" className="flex-1" style={{ backgroundColor: '#FFD1A1' }}>
+            {/* Remove or replace the gradient background overlay */}
+            {/* <View className="absolute inset-0" style={{
+        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%)'
+    }} /> */}
 
             {/* Header - Enhanced with glass effect */}
             <View className="flex-row justify-between items-center px-6 py-5 bg-white/10 backdrop-blur-lg border-b border-white/20">
