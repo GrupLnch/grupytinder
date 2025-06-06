@@ -13,7 +13,7 @@ const HomeScreen = () => {
     const navigation = useNavigation();
     const { user, signOut } = useAuth();
     const [restaurants, setRestaurants] = useState([]);
-    const [allRestaurants, setAllRestaurants] = useState([]); // Store unfiltered results
+    const [allRestaurants, setAllRestaurants] = useState([]);
     const [swipedCards, setSwipedCards] = useState([]);
     const [likedRestaurants, setLikedRestaurants] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
@@ -351,7 +351,7 @@ const HomeScreen = () => {
     };
 
     return (
-        <SafeAreaView testID="home-screen-view" className="flex-1" style={{ backgroundColor: '#FFD1A1' }}>
+        <SafeAreaView testID="home-screen-view" className="flex-1" style={{ backgroundColor: '#5B6C8F' }}>
             {/* Remove or replace the gradient background overlay */}
             {/* <View className="absolute inset-0" style={{
         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%)'
