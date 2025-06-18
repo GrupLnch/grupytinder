@@ -222,7 +222,7 @@ const HomeScreen = () => {
                 // Delete from Firestore
                 await deleteDoc(doc(db, "users", user.uid, "likedRestaurants", restaurant.place_id));
 
-                // Update local state
+                // Update local state with the liked restaurant
                 setLikedRestaurants(prev => prev.filter(r => r.place_id !== restaurant.place_id));
 
                 console.log("Removed from likes:", restaurant.name);

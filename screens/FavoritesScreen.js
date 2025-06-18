@@ -15,7 +15,7 @@ const FavoritesScreen = () => {
     const fetchFavoriteRestaurants = async () => {
         if (!user?.uid) {
             setLoading(false);
-            return; // Cannot fetch without a user
+            return;
         }
 
         try {
@@ -44,7 +44,6 @@ const FavoritesScreen = () => {
         }
     };
 
-    // Refresh favorites when screen comes into focus
     useFocusEffect(
         React.useCallback(() => {
             fetchFavoriteRestaurants();
@@ -113,7 +112,7 @@ const FavoritesScreen = () => {
             // flex: 1 makes it take up equal space in the column
             // m-1 adds margin around each item for spacing
             <View className="flex-1 m-1 bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Make the whole card tappable (optional) */}
+                {/* Make the whole card tappable */}
                 <TouchableOpacity onPress={() => {
                     // Add navigation to a detail screen here if you create one
                     console.log("Tapped on:", item.name);

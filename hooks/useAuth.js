@@ -13,7 +13,7 @@ const AuthContext = createContext({
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true); // Start as `true` to block UI until session is determined
+    const [loading, setLoading] = useState(true);
 
     // Configuration for Google Authentication
     const config = {
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
             console.log("Google Auth Request:", request);
             setLoading(true);
             const result = await promptAsync();
-            console.log("promptAsync result:", result); // Log the result of the promptAsync call
+            console.log("promptAsync result:", result);
         } catch (error) {
             console.error("Sign-in error:", error);
         } finally {
@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }) => {
 
     // Sign-out function
     const signOut = async () => {
-        if (!user) return; // Prevent unnecessary sign-out calls
+        if (!user) return;
 
         try {
             console.log("Signing out...");
