@@ -1,7 +1,6 @@
 import React, {createContext, useContext, useEffect, useMemo, useState} from "react";
 import {useIdTokenAuthRequest} from "expo-auth-session/providers/google";
-import {GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signOut as firebaseSignOut} from "@firebase/auth";
-import { auth } from "../firebase";
+import auth, {GoogleAuthProvider} from '@react-native-firebase/auth';
 import {Platform} from "react-native";
 import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } from '@env';
 
@@ -32,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for authentication state changes
     useEffect(() => {
-        return onAuthStateChanged(auth, (authUser) => {
+        return auth().onAuthStateChanged((authUser) => {
             if (authUser) {
                 // User is signed in
                 setUser(authUser);
@@ -55,7 +54,7 @@ export const AuthProvider = ({ children }) => {
 
             const credential = GoogleAuthProvider.credential(id_token);
             setLoading(true);
-            signInWithCredential(auth, credential)
+            auth().signInWithCredential(credential)
                 .then((userCredential) => {
                     setUser(userCredential.user);
                     console.log("User logged in:", userCredential.user);
@@ -90,7 +89,7 @@ export const AuthProvider = ({ children }) => {
 
         try {
             console.log("Signing out...");
-            await firebaseSignOut(auth);
+            await auth().signOut();
             setUser(null);
             console.log("User signed out successfully");
         } catch (error) {

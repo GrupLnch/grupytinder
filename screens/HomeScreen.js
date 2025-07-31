@@ -6,8 +6,7 @@ import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import Swiper from "react-native-deck-swiper";
 import { fetchNearbyRestaurants } from '../utils/placesApi';
-import { doc, setDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import firestore from '@react-native-firebase/firestore';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
@@ -144,34 +143,30 @@ const HomeScreen = () => {
     };
 
     // Load liked restaurants from Firebase
-    useEffect(() => {
-        const fetchLikedRestaurants = async () => {
-            if (!user?.uid) return;
+    const fetchLikedRestaurants = async () => {
+        if (!user?.uid) return;
 
-            try {
-                const q = query(
-                    collection(db, "users", user.uid, "likedRestaurants")
-                );
+        try {
+            const querySnapshot = await firestore()
+                .collection('users')
+                .doc(user.uid)
+                .collection('likedRestaurants')
+                .get();
 
-                const querySnapshot = await getDocs(q);
-                const likedPlaces = [];
-
-                querySnapshot.forEach((doc) => {
-                    likedPlaces.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
+            const likedPlaces = [];
+            querySnapshot.forEach((doc) => {
+                likedPlaces.push({
+                    id: doc.id,
+                    ...doc.data()
                 });
+            });
 
-                setLikedRestaurants(likedPlaces);
-                console.log(`Loaded ${likedPlaces.length} liked restaurants`);
-            } catch (error) {
-                console.error("Error fetching liked restaurants:", error);
-            }
-        };
-
-        fetchLikedRestaurants();
-    }, [user]);
+            setLikedRestaurants(likedPlaces);
+            console.log(`Loaded ${likedPlaces.length} liked restaurants`);
+        } catch (error) {
+            console.error("Error fetching liked restaurants:", error);
+        }
+    };
 
     // Save a restaurant to Firebase when liked
     const saveLikedRestaurant = async (restaurant) => {
@@ -191,14 +186,16 @@ const HomeScreen = () => {
                 photos: restaurant.photos,
                 geometry: restaurant.geometry,
                 opening_hours: restaurant.opening_hours,
-                savedAt: new Date().toISOString(),
+                savedAt: firestore.FieldValue.serverTimestamp(),
             };
 
             // Save to Firestore
-            await setDoc(
-                doc(db, "users", user.uid, "likedRestaurants", restaurant.place_id),
-                restaurantData
-            );
+            await firestore()
+                .collection('users')
+                .doc(user.uid)
+                .collection('likedRestaurants')
+                .doc(restaurant.place_id)
+                .set(restaurantData);
 
             // Update local state
             setLikedRestaurants(prev => [...prev, restaurantData]);
@@ -220,9 +217,14 @@ const HomeScreen = () => {
 
             if (isLiked) {
                 // Delete from Firestore
-                await deleteDoc(doc(db, "users", user.uid, "likedRestaurants", restaurant.place_id));
+                await firestore()
+                    .collection('users')
+                    .doc(user.uid)
+                    .collection('likedRestaurants')
+                    .doc(restaurant.place_id)
+                    .delete();
 
-                // Update local state with the liked restaurant
+                // Update local state
                 setLikedRestaurants(prev => prev.filter(r => r.place_id !== restaurant.place_id));
 
                 console.log("Removed from likes:", restaurant.name);
@@ -231,6 +233,11 @@ const HomeScreen = () => {
             console.error("Error removing restaurant from likes:", error);
         }
     };
+
+    // Load liked restaurants when user changes
+    useEffect(() => {
+        fetchLikedRestaurants();
+    }, [user]);
 
     const handleSignOut = async () => {
         await signOut();
@@ -352,11 +359,6 @@ const HomeScreen = () => {
 
     return (
         <SafeAreaView testID="home-screen-view" className="flex-1" style={{ backgroundColor: '#5B6C8F' }}>
-            {/* Remove or replace the gradient background overlay */}
-            {/* <View className="absolute inset-0" style={{
-        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%)'
-    }} /> */}
-
             {/* Header - Enhanced with glass effect */}
             <View className="flex-row justify-between items-center px-6 py-5 bg-white/10 backdrop-blur-lg border-b border-white/20">
                 {/* Profile Icon - Enhanced with glow */}
@@ -393,7 +395,6 @@ const HomeScreen = () => {
                     </View>
                 </TouchableOpacity>
             </View>
-            {/* End of Header */}
 
             {/* Cards - Enhanced with better spacing */}
             <View className="flex-1 justify-center items-center px-4 mt-4 mb-4">
