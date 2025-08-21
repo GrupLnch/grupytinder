@@ -7,10 +7,12 @@ import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import Swiper from "react-native-deck-swiper";
 import { fetchNearbyRestaurants } from '../utils/placesApi';
 import firestore from '@react-native-firebase/firestore';
+import Constants from 'expo-constants';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
     const { user, signOut } = useAuth();
+    const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
     const [restaurants, setRestaurants] = useState([]);
     const [allRestaurants, setAllRestaurants] = useState([]);
     const [swipedCards, setSwipedCards] = useState([]);
@@ -249,7 +251,7 @@ const HomeScreen = () => {
 
         const photoReference = card.photos?.[0]?.photo_reference;
         const imageUrl = photoReference
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
             : 'https://via.placeholder.com/150';
 
         const openNow = card.opening_hours?.open_now;

@@ -2,7 +2,10 @@ import React, {createContext, useContext, useEffect, useMemo, useState} from "re
 import {useIdTokenAuthRequest} from "expo-auth-session/providers/google";
 import auth, {GoogleAuthProvider} from '@react-native-firebase/auth';
 import {Platform} from "react-native";
-import { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } from '@env';
+import Constants from 'expo-constants';
+
+// Get environment variables from Expo config
+const { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } = Constants.expoConfig?.extra || {};
 
 const AuthContext = createContext({
     user: null,

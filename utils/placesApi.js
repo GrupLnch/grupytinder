@@ -1,7 +1,5 @@
-import { GOOGLE_PLACES_API_KEY } from '@env';
+import Constants from 'expo-constants';
 
-// returns our API
-console.log("GOOGLE_PLACES_API_KEY Loaded:", GOOGLE_PLACES_API_KEY || 'undefined');
 /**
  * Fetch nearby restaurants from Google Places API
  * @param {string} location - The latitude and longitude (e.g., "37.7749,-122.4194")
@@ -9,6 +7,11 @@ console.log("GOOGLE_PLACES_API_KEY Loaded:", GOOGLE_PLACES_API_KEY || 'undefined
  * @returns {Promise<Array>} - List of nearby restaurants
  */
 export const fetchNearbyRestaurants = async (location, radius = 1500) => {
+    const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
+
+    //returns our api
+    console.log("GOOGLE_PLACES_API_KEY Loaded:", GOOGLE_PLACES_API_KEY || 'undefined');
+
     try {
         const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=${radius}&type=restaurant&key=${GOOGLE_PLACES_API_KEY}`;
         console.log("🛰️ Final URL to fetch:", url);
