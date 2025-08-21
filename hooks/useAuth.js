@@ -4,7 +4,7 @@ import auth, {GoogleAuthProvider} from '@react-native-firebase/auth';
 import {Platform} from "react-native";
 import Constants from 'expo-constants';
 
-// Get environment variables from Expo config
+// Get environment variables from Expo config with fallbacks
 const { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } = Constants.expoConfig?.extra || {};
 
 const AuthContext = createContext({
@@ -18,13 +18,15 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Configuration for Google Authentication
+    // Configuration for Google Authentication with fallbacks
     const config = {
-        androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-        iosClientId: GOOGLE_IOS_CLIENT_ID,
+        androidClientId: GOOGLE_ANDROID_CLIENT_ID || '316379143309-ddl0rsv98mvf7j1ar9o3sf308974sc0d.apps.googleusercontent.com',
+        iosClientId: GOOGLE_IOS_CLIENT_ID || '316379143309-avd51fk0necojuel6foc60clcor6fvck.apps.googleusercontent.com',
         scopes: ["profile", "email"],
         permissions: ["public_profile", "email", "gender", "location"],
     };
+
+    console.log("Auth config:", config);
 
     // Initialize Google Sign-In request
     const [request, response, promptAsync] = useIdTokenAuthRequest({
