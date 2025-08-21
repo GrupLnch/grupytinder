@@ -4,12 +4,15 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import firestore from '@react-native-firebase/firestore';
+import Constants from 'expo-constants';
 
 const FavoritesScreen = () => {
     const navigation = useNavigation();
     const { user } = useAuth();
     const [favoriteRestaurants, setFavoriteRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
 
     const fetchFavoriteRestaurants = async () => {
         if (!user?.uid) {
@@ -28,7 +31,7 @@ const FavoritesScreen = () => {
             const favoritePlaces = [];
             querySnapshot.forEach((doc) => {
                 favoritePlaces.push({
-                    id: doc.id, // Use doc.id as a unique key
+                    id: doc.id,
                     ...doc.data()
                 });
             });
@@ -49,7 +52,6 @@ const FavoritesScreen = () => {
         }, [user])
     );
 
-    // Initial load
     useEffect(() => {
         fetchFavoriteRestaurants();
     }, [user]);
@@ -72,7 +74,6 @@ const FavoritesScreen = () => {
                     text: "Remove",
                     onPress: async () => {
                         try {
-                            // Delete from Firestore
                             await firestore()
                                 .collection('users')
                                 .doc(user.uid)
@@ -80,9 +81,7 @@ const FavoritesScreen = () => {
                                 .doc(restaurantId)
                                 .delete();
 
-                            // Update local state
                             setFavoriteRestaurants(prev => prev.filter(r => r.id !== restaurantId));
-
                             console.log("Removed favorite:", restaurantId);
                         } catch (error) {
                             console.error("Error removing favorite restaurant:", error);
@@ -96,14 +95,11 @@ const FavoritesScreen = () => {
     };
 
     const renderItem = ({ item }) => {
-        // Safety check for item
-        if (!item) {
-            return null;
-        }
+        if (!item) return null;
 
         const photoReference = item.photos?.[0]?.photo_reference;
         const imageUrl = photoReference
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
             : 'https://via.placeholder.com/150';
 
         const openNow = item.opening_hours?.open_now;
@@ -112,21 +108,13 @@ const FavoritesScreen = () => {
         const vicinity = item.vicinity;
 
         return (
-            // Main container for each grid item
-            // flex: 1 makes it take up equal space in the column
-            // m-1 adds margin around each item for spacing
             <View className="flex-1 m-1 bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Make the whole card tappable */}
-                <TouchableOpacity onPress={() => {
-                    // Add navigation to a detail screen here if you create one
-                    console.log("Tapped on:", item.name);
-                }}>
+                <TouchableOpacity onPress={() => console.log("Tapped on:", item.name)}>
                     <Image
                         source={{ uri: imageUrl }}
                         className="h-32 w-full"
                         resizeMode="cover"
                     />
-                    {/* Text content area */}
                     <View className="p-2">
                         <Text className="text-sm font-semibold" numberOfLines={1}>{item.name || 'Unknown'}</Text>
                         {vicinity && <Text className="text-gray-600 text-xs" numberOfLines={1}>{vicinity}</Text>}
@@ -157,7 +145,6 @@ const FavoritesScreen = () => {
                 <Text className="text-xl font-bold">Favorite Restaurants</Text>
             </View>
 
-            {/* Loading Indicator */}
             {loading ? (
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#FF5733" />
@@ -165,7 +152,6 @@ const FavoritesScreen = () => {
                 </View>
             ) : (
                 <>
-                    {/* No Favorites Message */}
                     {favoriteRestaurants.length === 0 && (
                         <View className="flex-1 justify-center items-center p-6">
                             <MaterialIcons name="favorite-border" size={60} color="#ccc" />
@@ -178,8 +164,7 @@ const FavoritesScreen = () => {
                         </View>
                     )}
 
-                    {/* Grid of Favorites */}
-                    {favoriteRestaurants.length > 0 && Array.isArray(favoriteRestaurants) && (
+                    {favoriteRestaurants.length > 0 && (
                         <FlatList
                             data={favoriteRestaurants}
                             renderItem={renderItem}
@@ -190,7 +175,6 @@ const FavoritesScreen = () => {
                     )}
                 </>
             )}
-
         </SafeAreaView>
     );
 };

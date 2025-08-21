@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, Button, SafeAreaView, TouchableOpacity, Image, Alert, Linking, Modal, ScrollView, Switch} from 'react-native';
+import { Text, View, SafeAreaView, TouchableOpacity, Image, Alert, Linking, Modal, ScrollView, Switch, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
-import Carousel from 'react-native-reanimated-carousel';
+import Animated, {useSharedValue, useAnimatedStyle, useAnimatedGestureHandler, withSpring, withTiming, runOnJS, interpolate, Extrapolate,} from 'react-native-reanimated';
+import { PanGestureHandler } from 'react-native-gesture-handler';
 import { fetchNearbyRestaurants } from '../utils/placesApi';
 import firestore from '@react-native-firebase/firestore';
 import Constants from 'expo-constants';
-import PropTypes from 'prop-types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 const HomeScreen = () => {
     const navigation = useNavigation();
@@ -62,7 +65,17 @@ const HomeScreen = () => {
         driving: false,     // < 5 miles
     });
 
-    const carouselRef = useRef(null);
+    // Animation values
+    const translateX = useSharedValue(0);
+    const translateY = useSharedValue(0);
+    const scale = useSharedValue(1);
+    const rotateZ = useSharedValue(0);
+
+    // Ref for programmatic swiping
+    const swiperRef = useRef({
+        swipeLeft: () => handleSwipe('left'),
+        swipeRight: () => handleSwipe('right'),
+    });
 
     // Load restaurants based on location
     useEffect(() => {
@@ -244,32 +257,120 @@ const HomeScreen = () => {
         fetchLikedRestaurants();
     }, [user]);
 
-    // ADDED: Handle like/dislike actions
-    const handleLike = () => {
-        if (currentIndex < restaurants.length) {
-            const restaurant = restaurants[currentIndex];
-            saveLikedRestaurant(restaurant);
-            console.log('Liked:', restaurant.name);
-
-            // Move to next card
-            if (carouselRef.current && currentIndex < restaurants.length - 1) {
-                carouselRef.current.next();
-            }
-        }
+    // Handle swipe completion
+    const onSwipedLeft = (index) => {
+        const restaurant = restaurants[index];
+        setSwipedCards(prev => [restaurant, ...prev]);
+        removeRestaurantFromLikes(restaurant);
+        console.log('Swiped left (disliked):', restaurant.name);
     };
 
-    const handleDislike = () => {
-        if (currentIndex < restaurants.length) {
-            const restaurant = restaurants[currentIndex];
-            removeRestaurantFromLikes(restaurant);
-            console.log('Disliked:', restaurant.name);
-
-            // Move to next card
-            if (carouselRef.current && currentIndex < restaurants.length - 1) {
-                carouselRef.current.next();
-            }
-        }
+    const onSwipedRight = (index) => {
+        const restaurant = restaurants[index];
+        setSwipedCards(prev => [restaurant, ...prev]);
+        saveLikedRestaurant(restaurant);
+        console.log('Swiped right (liked):', restaurant.name);
     };
+
+    const handleSwipe = (direction) => {
+        if (currentIndex >= restaurants.length) return;
+
+        const toValue = direction === 'left' ? -SCREEN_WIDTH * 1.5 : SCREEN_WIDTH * 1.5;
+
+        translateX.value = withTiming(toValue, { duration: 300 }, () => {
+            runOnJS(() => {
+                if (direction === 'left') {
+                    onSwipedLeft(currentIndex);
+                } else {
+                    onSwipedRight(currentIndex);
+                }
+
+                // Move to next card
+                setCurrentIndex(prev => prev + 1);
+
+                // Reset animation values
+                translateX.value = 0;
+                translateY.value = 0;
+                rotateZ.value = 0;
+                scale.value = 1;
+            })();
+        });
+    };
+
+    // Gesture handler
+    const gestureHandler = useAnimatedGestureHandler({
+        onStart: (_, context) => {
+            context.startX = translateX.value;
+            context.startY = translateY.value;
+        },
+        onActive: (event, context) => {
+            translateX.value = context.startX + event.translationX;
+            translateY.value = context.startY + event.translationY;
+
+            // Rotation based on horizontal movement
+            rotateZ.value = interpolate(
+                translateX.value,
+                [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+                [-15, 0, 15],
+                Extrapolate.CLAMP
+            );
+
+            // Scale effect
+            const distance = Math.sqrt(translateX.value ** 2 + translateY.value ** 2);
+            scale.value = interpolate(
+                distance,
+                [0, SCREEN_WIDTH / 2],
+                [1, 0.95],
+                Extrapolate.CLAMP
+            );
+        },
+        onEnd: (event) => {
+            const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
+            const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
+
+            if (shouldSwipeLeft) {
+                translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 }, () => {
+                    runOnJS(() => {
+                        onSwipedLeft(currentIndex);
+                        setCurrentIndex(prev => prev + 1);
+                        translateX.value = 0;
+                        translateY.value = 0;
+                        rotateZ.value = 0;
+                        scale.value = 1;
+                    })();
+                });
+            } else if (shouldSwipeRight) {
+                translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 }, () => {
+                    runOnJS(() => {
+                        onSwipedRight(currentIndex);
+                        setCurrentIndex(prev => prev + 1);
+                        translateX.value = 0;
+                        translateY.value = 0;
+                        rotateZ.value = 0;
+                        scale.value = 1;
+                    })();
+                });
+            } else {
+                // Snap back
+                translateX.value = withSpring(0);
+                translateY.value = withSpring(0);
+                rotateZ.value = withSpring(0);
+                scale.value = withSpring(1);
+            }
+        },
+    });
+
+    // Animated style for the card
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { translateX: translateX.value },
+                { translateY: translateY.value },
+                { rotateZ: `${rotateZ.value}deg` },
+                { scale: scale.value },
+            ],
+        };
+    });
 
     const handleSignOut = async () => {
         await signOut();
@@ -300,7 +401,6 @@ const HomeScreen = () => {
             <View className="justify-center items-center bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden" style={{
                 height: 420,
                 width: 340,
-                background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 10 },
                 shadowOpacity: 0.25,
@@ -428,52 +528,52 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Cards - CHANGED: Replace Swiper with Carousel */}
-            <View className="flex-1 justify-center items-center px-4 mt-4 mb-4">
-                {restaurants.length > 0 ? (
-                    <Carousel
-                        ref={carouselRef}
-                        width={340}
-                        height={420}
-                        data={restaurants}
-                        renderItem={({ item }) => renderCard(item)}
-                        onSnapToItem={(index) => {
-                            setCurrentIndex(index);
-                            console.log('Current card index:', index);
-                        }}
-                        mode="parallax"
-                        modeConfig={{
-                            parallaxScrollingScale: 0.9,
-                            parallaxScrollingOffset: 50,
-                        }}
-                        panGestureHandlerProps={{
-                            activeOffsetX: [-10, 10],
-                        }}
-                        style={{
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    />
+            {/* Cards Section - Updated with Reanimated */}
+            <View className="flex-1 justify-center items-center">
+                {restaurants.length > 0 && currentIndex < restaurants.length ? (
+                    <View className="relative">
+                        {/* Background cards for stacking effect */}
+                        {restaurants.slice(currentIndex + 1, currentIndex + 3).map((restaurant, index) => (
+                            <View
+                                key={`bg-${currentIndex + index + 1}`}
+                                className="absolute"
+                                style={{
+                                    transform: [
+                                        { scale: 1 - (index + 1) * 0.05 },
+                                        { translateY: -(index + 1) * 10 }
+                                    ],
+                                    zIndex: -(index + 1),
+                                    opacity: 1 - (index + 1) * 0.2
+                                }}
+                            >
+                                {renderCard(restaurant)}
+                            </View>
+                        ))}
+
+                        {/* Main card with gesture handling */}
+                        <PanGestureHandler onGestureEvent={gestureHandler}>
+                            <Animated.View style={[animatedStyle, { zIndex: 10 }]}>
+                                {renderCard(restaurants[currentIndex])}
+                            </Animated.View>
+                        </PanGestureHandler>
+                    </View>
                 ) : (
-                    <View className="flex-1 justify-center items-center">
-                        <View className="bg-white/20 backdrop-blur-md rounded-2xl p-8 border border-white/30">
-                            <Text className="text-white text-xl font-semibold text-center">
-                                Loading restaurants...
-                            </Text>
-                            <Text className="text-white/80 text-sm text-center mt-2">
-                                Finding amazing places near you
-                            </Text>
-                        </View>
+                    <View className="bg-white/20 backdrop-blur-md rounded-2xl p-8 border border-white/30">
+                        <Text className="text-white text-xl font-semibold text-center">
+                            {restaurants.length === 0 ? 'Loading restaurants...' : 'No more restaurants!'}
+                        </Text>
+                        <Text className="text-white/80 text-sm text-center mt-2">
+                            {restaurants.length === 0 ? 'Finding amazing places near you' : 'Check back later for more options'}
+                        </Text>
                     </View>
                 )}
             </View>
 
-            {/* Like/Dislike Buttons - CHANGED: Update button handlers */}
+            {/* Like/Dislike Buttons - Updated handlers */}
             <View className="flex-row justify-center items-center space-x-12 py-6 mb-8">
                 <TouchableOpacity
-                    onPress={handleDislike}
+                    onPress={() => swiperRef.current.swipeLeft()}
                     style={{
-                        background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
                         shadowColor: '#ff6b6b',
                         shadowOffset: { width: 0, height: 8 },
                         shadowOpacity: 0.3,
@@ -485,9 +585,8 @@ const HomeScreen = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={handleLike}
+                    onPress={() => swiperRef.current.swipeRight()}
                     style={{
-                        background: 'linear-gradient(135deg, #51cf66 0%, #40c057 100%)',
                         shadowColor: '#51cf66',
                         shadowOffset: { width: 0, height: 8 },
                         shadowOpacity: 0.3,
@@ -499,7 +598,7 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Filter Modal - No changes needed */}
+            {/* Filter Modal */}
             <Modal
                 visible={showFilters}
                 animationType="slide"
