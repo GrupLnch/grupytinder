@@ -4,10 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
-import Swiper from "react-native-deck-swiper";
+import Carousel from 'react-native-reanimated-carousel';
 import { fetchNearbyRestaurants } from '../utils/placesApi';
 import firestore from '@react-native-firebase/firestore';
 import Constants from 'expo-constants';
+import PropTypes from 'prop-types';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
@@ -18,6 +19,7 @@ const HomeScreen = () => {
     const [swipedCards, setSwipedCards] = useState([]);
     const [likedRestaurants, setLikedRestaurants] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [filters, setFilters] = useState({
         // Cuisine Types
         american: false,
@@ -59,7 +61,8 @@ const HomeScreen = () => {
         walking: false,     // < 0.5 mile
         driving: false,     // < 5 miles
     });
-    const swiperRef = useRef(null);
+
+    const carouselRef = useRef(null);
 
     // Load restaurants based on location
     useEffect(() => {
@@ -241,6 +244,33 @@ const HomeScreen = () => {
         fetchLikedRestaurants();
     }, [user]);
 
+    // ADDED: Handle like/dislike actions
+    const handleLike = () => {
+        if (currentIndex < restaurants.length) {
+            const restaurant = restaurants[currentIndex];
+            saveLikedRestaurant(restaurant);
+            console.log('Liked:', restaurant.name);
+
+            // Move to next card
+            if (carouselRef.current && currentIndex < restaurants.length - 1) {
+                carouselRef.current.next();
+            }
+        }
+    };
+
+    const handleDislike = () => {
+        if (currentIndex < restaurants.length) {
+            const restaurant = restaurants[currentIndex];
+            removeRestaurantFromLikes(restaurant);
+            console.log('Disliked:', restaurant.name);
+
+            // Move to next card
+            if (carouselRef.current && currentIndex < restaurants.length - 1) {
+                carouselRef.current.next();
+            }
+        }
+    };
+
     const handleSignOut = async () => {
         await signOut();
         navigation.navigate('Login');
@@ -398,43 +428,31 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Cards - Enhanced with better spacing */}
+            {/* Cards - CHANGED: Replace Swiper with Carousel */}
             <View className="flex-1 justify-center items-center px-4 mt-4 mb-4">
                 {restaurants.length > 0 ? (
-                    <Swiper
-                        ref={swiperRef}
-                        cards={restaurants}
-                        renderCard={renderCard}
-                        onSwipedLeft={(index) => {
-                            const restaurant = restaurants[index];
-                            setSwipedCards(prev => [restaurant, ...prev]);
-                            removeRestaurantFromLikes(restaurant);
-                            console.log('Swiped left (disliked):', restaurant.name);
+                    <Carousel
+                        ref={carouselRef}
+                        width={340}
+                        height={420}
+                        data={restaurants}
+                        renderItem={({ item }) => renderCard(item)}
+                        onSnapToItem={(index) => {
+                            setCurrentIndex(index);
+                            console.log('Current card index:', index);
                         }}
-                        onSwipedRight={(index) => {
-                            const restaurant = restaurants[index];
-                            setSwipedCards(prev => [restaurant, ...prev]);
-                            saveLikedRestaurant(restaurant);
-                            console.log('Swiped right (liked):', restaurant.name);
+                        mode="parallax"
+                        modeConfig={{
+                            parallaxScrollingScale: 0.9,
+                            parallaxScrollingOffset: 50,
                         }}
-                        onSwipedAll={() => {
-                            if (swipedCards.length > 0) {
-                                setRestaurants(swipedCards);
-                                setSwipedCards([]);
-                            }
+                        panGestureHandlerProps={{
+                            activeOffsetX: [-10, 10],
                         }}
-                        backgroundColor="transparent"
-                        cardIndex={0}
-                        stackSize={1}
-                        stackSeparation={0}
-                        animateCardOpacity={false}
-                        verticalSwipe={false}
-                        cardVerticalMargin={0}
-                        cardHorizontalMargin={20}
-                        marginTop={0}
-                        marginBottom={0}
-                        showSecondCard={false}
-                        useViewOverflow={false}
+                        style={{
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
                     />
                 ) : (
                     <View className="flex-1 justify-center items-center">
@@ -450,14 +468,10 @@ const HomeScreen = () => {
                 )}
             </View>
 
-            {/* Like/Dislike Buttons - Enhanced with gradients */}
+            {/* Like/Dislike Buttons - CHANGED: Update button handlers */}
             <View className="flex-row justify-center items-center space-x-12 py-6 mb-8">
                 <TouchableOpacity
-                    onPress={() => {
-                        if (swiperRef.current) {
-                            swiperRef.current.swipeLeft();
-                        }
-                    }}
+                    onPress={handleDislike}
                     style={{
                         background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
                         shadowColor: '#ff6b6b',
@@ -471,11 +485,7 @@ const HomeScreen = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={() => {
-                        if (swiperRef.current) {
-                            swiperRef.current.swipeRight();
-                        }
-                    }}
+                    onPress={handleLike}
                     style={{
                         background: 'linear-gradient(135deg, #51cf66 0%, #40c057 100%)',
                         shadowColor: '#51cf66',
@@ -489,7 +499,7 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Filter Modal */}
+            {/* Filter Modal - No changes needed */}
             <Modal
                 visible={showFilters}
                 animationType="slide"
