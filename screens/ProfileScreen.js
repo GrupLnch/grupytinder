@@ -3,8 +3,7 @@ import {Text, View, SafeAreaView, TouchableOpacity, Image, TextInput, Alert, Act
 import { useNavigation } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import firestore from '@react-native-firebase/firestore';
 
 const ProfileScreen = () => {
     const navigation = useNavigation();
@@ -27,9 +26,12 @@ const ProfileScreen = () => {
             }
 
             try {
-                const profileDoc = await getDoc(doc(db, "users", user.uid));
+                const profileDoc = await firestore()
+                    .collection('users')
+                    .doc(user.uid)
+                    .get();
 
-                if (profileDoc.exists()) {
+                if (profileDoc.exists) {
                     const profileData = profileDoc.data();
                     setProfile({
                         displayName: profileData.displayName || user.displayName || '',
@@ -67,12 +69,15 @@ const ProfileScreen = () => {
 
             const profileData = {
                 ...profile,
-                updatedAt: new Date().toISOString(),
+                updatedAt: firestore.FieldValue.serverTimestamp(),
                 email: user.email,
                 photoURL: user.photoURL
             };
 
-            await setDoc(doc(db, "users", user.uid), profileData, { merge: true });
+            await firestore()
+                .collection('users')
+                .doc(user.uid)
+                .set(profileData, { merge: true });
 
             Alert.alert("Success", "Profile updated successfully!");
         } catch (error) {

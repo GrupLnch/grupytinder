@@ -1,8 +1,11 @@
 import React, {createContext, useContext, useEffect, useMemo, useState} from "react";
 import {useIdTokenAuthRequest} from "expo-auth-session/providers/google";
-import {GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signOut as firebaseSignOut} from "@firebase/auth";
-import { auth } from "../firebase";
+import auth, {GoogleAuthProvider} from '@react-native-firebase/auth';
 import {Platform} from "react-native";
+import Constants from 'expo-constants';
+
+// Get environment variables from Expo config with fallbacks
+const { GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID } = Constants.expoConfig?.extra || {};
 
 const AuthContext = createContext({
     user: null,
@@ -13,15 +16,17 @@ const AuthContext = createContext({
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true); // Start as `true` to block UI until session is determined
+    const [loading, setLoading] = useState(true);
 
-    // Configuration for Google Authentication
+    // Configuration for Google Authentication with fallbacks
     const config = {
-        androidClientId: '316379143309-ddl0rsv98mvf7j1ar9o3sf308974sc0d.apps.googleusercontent.com',
-        iosClientId: '316379143309-avd51fk0necojuel6foc60clcor6fvck.apps.googleusercontent.com',
+        androidClientId: GOOGLE_ANDROID_CLIENT_ID || '316379143309-ddl0rsv98mvf7j1ar9o3sf308974sc0d.apps.googleusercontent.com',
+        iosClientId: GOOGLE_IOS_CLIENT_ID || '316379143309-avd51fk0necojuel6foc60clcor6fvck.apps.googleusercontent.com',
         scopes: ["profile", "email"],
         permissions: ["public_profile", "email", "gender", "location"],
     };
+
+    console.log("Auth config:", config);
 
     // Initialize Google Sign-In request
     const [request, response, promptAsync] = useIdTokenAuthRequest({
@@ -31,7 +36,7 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for authentication state changes
     useEffect(() => {
-        return onAuthStateChanged(auth, (authUser) => {
+        return auth().onAuthStateChanged((authUser) => {
             if (authUser) {
                 // User is signed in
                 setUser(authUser);
@@ -54,7 +59,7 @@ export const AuthProvider = ({ children }) => {
 
             const credential = GoogleAuthProvider.credential(id_token);
             setLoading(true);
-            signInWithCredential(auth, credential)
+            auth().signInWithCredential(credential)
                 .then((userCredential) => {
                     setUser(userCredential.user);
                     console.log("User logged in:", userCredential.user);
@@ -75,7 +80,7 @@ export const AuthProvider = ({ children }) => {
             console.log("Google Auth Request:", request);
             setLoading(true);
             const result = await promptAsync();
-            console.log("promptAsync result:", result); // Log the result of the promptAsync call
+            console.log("promptAsync result:", result);
         } catch (error) {
             console.error("Sign-in error:", error);
         } finally {
@@ -85,11 +90,11 @@ export const AuthProvider = ({ children }) => {
 
     // Sign-out function
     const signOut = async () => {
-        if (!user) return; // Prevent unnecessary sign-out calls
+        if (!user) return;
 
         try {
             console.log("Signing out...");
-            await firebaseSignOut(auth);
+            await auth().signOut();
             setUser(null);
             console.log("User signed out successfully");
         } catch (error) {

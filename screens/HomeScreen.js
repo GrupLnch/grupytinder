@@ -1,22 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, Button, SafeAreaView, TouchableOpacity, Image, Alert, Linking, Modal, ScrollView, Switch} from 'react-native';
+import { Text, View, SafeAreaView, TouchableOpacity, Image, Alert, Linking, Modal, ScrollView, Switch, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
-import Swiper from "react-native-deck-swiper";
+import Animated, {useSharedValue, useAnimatedStyle, useAnimatedGestureHandler, withSpring, withTiming, runOnJS, interpolate, Extrapolate,} from 'react-native-reanimated';
+import { PanGestureHandler } from 'react-native-gesture-handler';
 import { fetchNearbyRestaurants } from '../utils/placesApi';
-import { doc, setDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import firestore from '@react-native-firebase/firestore';
+import Constants from 'expo-constants';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 const HomeScreen = () => {
     const navigation = useNavigation();
     const { user, signOut } = useAuth();
+    const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
     const [restaurants, setRestaurants] = useState([]);
-    const [allRestaurants, setAllRestaurants] = useState([]); // Store unfiltered results
+    const [allRestaurants, setAllRestaurants] = useState([]);
     const [swipedCards, setSwipedCards] = useState([]);
     const [likedRestaurants, setLikedRestaurants] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [filters, setFilters] = useState({
         // Cuisine Types
         american: false,
@@ -58,7 +64,18 @@ const HomeScreen = () => {
         walking: false,     // < 0.5 mile
         driving: false,     // < 5 miles
     });
-    const swiperRef = useRef(null);
+
+    // Animation values
+    const translateX = useSharedValue(0);
+    const translateY = useSharedValue(0);
+    const scale = useSharedValue(1);
+    const rotateZ = useSharedValue(0);
+
+    // Ref for programmatic swiping
+    const swiperRef = useRef({
+        swipeLeft: () => handleSwipe('left'),
+        swipeRight: () => handleSwipe('right'),
+    });
 
     // Load restaurants based on location
     useEffect(() => {
@@ -144,34 +161,30 @@ const HomeScreen = () => {
     };
 
     // Load liked restaurants from Firebase
-    useEffect(() => {
-        const fetchLikedRestaurants = async () => {
-            if (!user?.uid) return;
+    const fetchLikedRestaurants = async () => {
+        if (!user?.uid) return;
 
-            try {
-                const q = query(
-                    collection(db, "users", user.uid, "likedRestaurants")
-                );
+        try {
+            const querySnapshot = await firestore()
+                .collection('users')
+                .doc(user.uid)
+                .collection('likedRestaurants')
+                .get();
 
-                const querySnapshot = await getDocs(q);
-                const likedPlaces = [];
-
-                querySnapshot.forEach((doc) => {
-                    likedPlaces.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
+            const likedPlaces = [];
+            querySnapshot.forEach((doc) => {
+                likedPlaces.push({
+                    id: doc.id,
+                    ...doc.data()
                 });
+            });
 
-                setLikedRestaurants(likedPlaces);
-                console.log(`Loaded ${likedPlaces.length} liked restaurants`);
-            } catch (error) {
-                console.error("Error fetching liked restaurants:", error);
-            }
-        };
-
-        fetchLikedRestaurants();
-    }, [user]);
+            setLikedRestaurants(likedPlaces);
+            console.log(`Loaded ${likedPlaces.length} liked restaurants`);
+        } catch (error) {
+            console.error("Error fetching liked restaurants:", error);
+        }
+    };
 
     // Save a restaurant to Firebase when liked
     const saveLikedRestaurant = async (restaurant) => {
@@ -191,14 +204,16 @@ const HomeScreen = () => {
                 photos: restaurant.photos,
                 geometry: restaurant.geometry,
                 opening_hours: restaurant.opening_hours,
-                savedAt: new Date().toISOString(),
+                savedAt: firestore.FieldValue.serverTimestamp(),
             };
 
             // Save to Firestore
-            await setDoc(
-                doc(db, "users", user.uid, "likedRestaurants", restaurant.place_id),
-                restaurantData
-            );
+            await firestore()
+                .collection('users')
+                .doc(user.uid)
+                .collection('likedRestaurants')
+                .doc(restaurant.place_id)
+                .set(restaurantData);
 
             // Update local state
             setLikedRestaurants(prev => [...prev, restaurantData]);
@@ -220,7 +235,12 @@ const HomeScreen = () => {
 
             if (isLiked) {
                 // Delete from Firestore
-                await deleteDoc(doc(db, "users", user.uid, "likedRestaurants", restaurant.place_id));
+                await firestore()
+                    .collection('users')
+                    .doc(user.uid)
+                    .collection('likedRestaurants')
+                    .doc(restaurant.place_id)
+                    .delete();
 
                 // Update local state
                 setLikedRestaurants(prev => prev.filter(r => r.place_id !== restaurant.place_id));
@@ -232,6 +252,126 @@ const HomeScreen = () => {
         }
     };
 
+    // Load liked restaurants when user changes
+    useEffect(() => {
+        fetchLikedRestaurants();
+    }, [user]);
+
+    // Handle swipe completion
+    const onSwipedLeft = (index) => {
+        const restaurant = restaurants[index];
+        setSwipedCards(prev => [restaurant, ...prev]);
+        removeRestaurantFromLikes(restaurant);
+        console.log('Swiped left (disliked):', restaurant.name);
+    };
+
+    const onSwipedRight = (index) => {
+        const restaurant = restaurants[index];
+        setSwipedCards(prev => [restaurant, ...prev]);
+        saveLikedRestaurant(restaurant);
+        console.log('Swiped right (liked):', restaurant.name);
+    };
+
+    const handleSwipe = (direction) => {
+        if (currentIndex >= restaurants.length) return;
+
+        const toValue = direction === 'left' ? -SCREEN_WIDTH * 1.5 : SCREEN_WIDTH * 1.5;
+
+        translateX.value = withTiming(toValue, { duration: 300 }, () => {
+            runOnJS(() => {
+                if (direction === 'left') {
+                    onSwipedLeft(currentIndex);
+                } else {
+                    onSwipedRight(currentIndex);
+                }
+
+                // Move to next card
+                setCurrentIndex(prev => prev + 1);
+
+                // Reset animation values
+                translateX.value = 0;
+                translateY.value = 0;
+                rotateZ.value = 0;
+                scale.value = 1;
+            })();
+        });
+    };
+
+    // Gesture handler
+    const gestureHandler = useAnimatedGestureHandler({
+        onStart: (_, context) => {
+            context.startX = translateX.value;
+            context.startY = translateY.value;
+        },
+        onActive: (event, context) => {
+            translateX.value = context.startX + event.translationX;
+            translateY.value = context.startY + event.translationY;
+
+            // Rotation based on horizontal movement
+            rotateZ.value = interpolate(
+                translateX.value,
+                [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+                [-15, 0, 15],
+                Extrapolate.CLAMP
+            );
+
+            // Scale effect
+            const distance = Math.sqrt(translateX.value ** 2 + translateY.value ** 2);
+            scale.value = interpolate(
+                distance,
+                [0, SCREEN_WIDTH / 2],
+                [1, 0.95],
+                Extrapolate.CLAMP
+            );
+        },
+        onEnd: (event) => {
+            const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
+            const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
+
+            if (shouldSwipeLeft) {
+                translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 }, () => {
+                    runOnJS(() => {
+                        onSwipedLeft(currentIndex);
+                        setCurrentIndex(prev => prev + 1);
+                        translateX.value = 0;
+                        translateY.value = 0;
+                        rotateZ.value = 0;
+                        scale.value = 1;
+                    })();
+                });
+            } else if (shouldSwipeRight) {
+                translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 }, () => {
+                    runOnJS(() => {
+                        onSwipedRight(currentIndex);
+                        setCurrentIndex(prev => prev + 1);
+                        translateX.value = 0;
+                        translateY.value = 0;
+                        rotateZ.value = 0;
+                        scale.value = 1;
+                    })();
+                });
+            } else {
+                // Snap back
+                translateX.value = withSpring(0);
+                translateY.value = withSpring(0);
+                rotateZ.value = withSpring(0);
+                scale.value = withSpring(1);
+            }
+        },
+    });
+
+    // Animated style for the card
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { translateX: translateX.value },
+                { translateY: translateY.value },
+                { rotateZ: `${rotateZ.value}deg` },
+                { scale: scale.value },
+            ],
+        };
+    });
+
     const handleSignOut = async () => {
         await signOut();
         navigation.navigate('Login');
@@ -242,7 +382,7 @@ const HomeScreen = () => {
 
         const photoReference = card.photos?.[0]?.photo_reference;
         const imageUrl = photoReference
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
             : 'https://via.placeholder.com/150';
 
         const openNow = card.opening_hours?.open_now;
@@ -261,7 +401,6 @@ const HomeScreen = () => {
             <View className="justify-center items-center bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden" style={{
                 height: 420,
                 width: 340,
-                background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 10 },
                 shadowOpacity: 0.25,
@@ -351,12 +490,7 @@ const HomeScreen = () => {
     };
 
     return (
-        <SafeAreaView testID="home-screen-view" className="flex-1" style={{ backgroundColor: '#FFD1A1' }}>
-            {/* Remove or replace the gradient background overlay */}
-            {/* <View className="absolute inset-0" style={{
-        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%)'
-    }} /> */}
-
+        <SafeAreaView testID="home-screen-view" className="flex-1" style={{ backgroundColor: '#5B6C8F' }}>
             {/* Header - Enhanced with glass effect */}
             <View className="flex-row justify-between items-center px-6 py-5 bg-white/10 backdrop-blur-lg border-b border-white/20">
                 {/* Profile Icon - Enhanced with glow */}
@@ -393,70 +527,53 @@ const HomeScreen = () => {
                     </View>
                 </TouchableOpacity>
             </View>
-            {/* End of Header */}
 
-            {/* Cards - Enhanced with better spacing */}
-            <View className="flex-1 justify-center items-center px-4 mt-4 mb-4">
-                {restaurants.length > 0 ? (
-                    <Swiper
-                        ref={swiperRef}
-                        cards={restaurants}
-                        renderCard={renderCard}
-                        onSwipedLeft={(index) => {
-                            const restaurant = restaurants[index];
-                            setSwipedCards(prev => [restaurant, ...prev]);
-                            removeRestaurantFromLikes(restaurant);
-                            console.log('Swiped left (disliked):', restaurant.name);
-                        }}
-                        onSwipedRight={(index) => {
-                            const restaurant = restaurants[index];
-                            setSwipedCards(prev => [restaurant, ...prev]);
-                            saveLikedRestaurant(restaurant);
-                            console.log('Swiped right (liked):', restaurant.name);
-                        }}
-                        onSwipedAll={() => {
-                            if (swipedCards.length > 0) {
-                                setRestaurants(swipedCards);
-                                setSwipedCards([]);
-                            }
-                        }}
-                        backgroundColor="transparent"
-                        cardIndex={0}
-                        stackSize={1}
-                        stackSeparation={0}
-                        animateCardOpacity={false}
-                        verticalSwipe={false}
-                        cardVerticalMargin={0}
-                        cardHorizontalMargin={20}
-                        marginTop={0}
-                        marginBottom={0}
-                        showSecondCard={false}
-                        useViewOverflow={false}
-                    />
+            {/* Cards Section - Updated with Reanimated */}
+            <View className="flex-1 justify-center items-center">
+                {restaurants.length > 0 && currentIndex < restaurants.length ? (
+                    <View className="relative">
+                        {/* Background cards for stacking effect */}
+                        {restaurants.slice(currentIndex + 1, currentIndex + 3).map((restaurant, index) => (
+                            <View
+                                key={`bg-${currentIndex + index + 1}`}
+                                className="absolute"
+                                style={{
+                                    transform: [
+                                        { scale: 1 - (index + 1) * 0.05 },
+                                        { translateY: -(index + 1) * 10 }
+                                    ],
+                                    zIndex: -(index + 1),
+                                    opacity: 1 - (index + 1) * 0.2
+                                }}
+                            >
+                                {renderCard(restaurant)}
+                            </View>
+                        ))}
+
+                        {/* Main card with gesture handling */}
+                        <PanGestureHandler onGestureEvent={gestureHandler}>
+                            <Animated.View style={[animatedStyle, { zIndex: 10 }]}>
+                                {renderCard(restaurants[currentIndex])}
+                            </Animated.View>
+                        </PanGestureHandler>
+                    </View>
                 ) : (
-                    <View className="flex-1 justify-center items-center">
-                        <View className="bg-white/20 backdrop-blur-md rounded-2xl p-8 border border-white/30">
-                            <Text className="text-white text-xl font-semibold text-center">
-                                Loading restaurants...
-                            </Text>
-                            <Text className="text-white/80 text-sm text-center mt-2">
-                                Finding amazing places near you
-                            </Text>
-                        </View>
+                    <View className="bg-white/20 backdrop-blur-md rounded-2xl p-8 border border-white/30">
+                        <Text className="text-white text-xl font-semibold text-center">
+                            {restaurants.length === 0 ? 'Loading restaurants...' : 'No more restaurants!'}
+                        </Text>
+                        <Text className="text-white/80 text-sm text-center mt-2">
+                            {restaurants.length === 0 ? 'Finding amazing places near you' : 'Check back later for more options'}
+                        </Text>
                     </View>
                 )}
             </View>
 
-            {/* Like/Dislike Buttons - Enhanced with gradients */}
+            {/* Like/Dislike Buttons - Updated handlers */}
             <View className="flex-row justify-center items-center space-x-12 py-6 mb-8">
                 <TouchableOpacity
-                    onPress={() => {
-                        if (swiperRef.current) {
-                            swiperRef.current.swipeLeft();
-                        }
-                    }}
+                    onPress={() => swiperRef.current.swipeLeft()}
                     style={{
-                        background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
                         shadowColor: '#ff6b6b',
                         shadowOffset: { width: 0, height: 8 },
                         shadowOpacity: 0.3,
@@ -468,13 +585,8 @@ const HomeScreen = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={() => {
-                        if (swiperRef.current) {
-                            swiperRef.current.swipeRight();
-                        }
-                    }}
+                    onPress={() => swiperRef.current.swipeRight()}
                     style={{
-                        background: 'linear-gradient(135deg, #51cf66 0%, #40c057 100%)',
                         shadowColor: '#51cf66',
                         shadowOffset: { width: 0, height: 8 },
                         shadowOpacity: 0.3,
