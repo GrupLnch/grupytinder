@@ -32,7 +32,8 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "android": {
       "adaptiveIcon": {

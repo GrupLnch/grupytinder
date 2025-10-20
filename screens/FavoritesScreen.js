@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, SafeAreaView, TouchableOpacity, Image, FlatList, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
-import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
-import firestore from '@react-native-firebase/firestore';
+import { MaterialIcons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
+import { getFirestore, collection, getDocs, doc, deleteDoc } from '@react-native-firebase/firestore';
+
+const firestore = getFirestore();
 
 const FavoritesScreen = () => {
     const navigation = useNavigation();
@@ -22,11 +24,7 @@ const FavoritesScreen = () => {
 
         try {
             setLoading(true);
-            const querySnapshot = await firestore()
-                .collection('users')
-                .doc(user.uid)
-                .collection('likedRestaurants')
-                .get();
+            const querySnapshot = await getDocs(collection(firestore, 'users', user.uid, 'likedRestaurants'));
 
             const favoritePlaces = [];
             querySnapshot.forEach((doc) => {
@@ -74,12 +72,7 @@ const FavoritesScreen = () => {
                     text: "Remove",
                     onPress: async () => {
                         try {
-                            await firestore()
-                                .collection('users')
-                                .doc(user.uid)
-                                .collection('likedRestaurants')
-                                .doc(restaurantId)
-                                .delete();
+                            await deleteDoc(doc(firestore, 'users', user.uid, 'likedRestaurants', restaurantId));
 
                             setFavoriteRestaurants(prev => prev.filter(r => r.id !== restaurantId));
                             console.log("Removed favorite:", restaurantId);
