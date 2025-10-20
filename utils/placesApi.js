@@ -1,4 +1,4 @@
-import Constants from 'expo-constants';
+
 import { GOOGLE_PLACES_API_KEY } from '@env';
 
 /**

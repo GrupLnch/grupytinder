@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, SafeAreaView, TouchableOpacity, Image, FlatList, Alert, ActivityIndicator } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
 import { MaterialIcons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
@@ -9,7 +9,6 @@ import { getFirestore, collection, getDocs, doc, deleteDoc } from '@react-native
 const firestore = getFirestore();
 
 const FavoritesScreen = () => {
-    const navigation = useNavigation();
     const { user } = useAuth();
     const [favoriteRestaurants, setFavoriteRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -149,7 +148,7 @@ const FavoritesScreen = () => {
                         <View className="flex-1 justify-center items-center p-6">
                             <MaterialIcons name="favorite-border" size={60} color="#ccc" />
                             <Text className="text-xl text-gray-500 mt-4 text-center">
-                                You haven't favorited any restaurants yet.
+                                You haven&#39;t favorited any restaurants yet.
                             </Text>
                             <Text className="text-gray-500 mt-2 text-center">
                                 Swipe right on the Discover tab to add favorites!

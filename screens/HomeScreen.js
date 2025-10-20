@@ -17,11 +17,11 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 const HomeScreen = () => {
     const navigation = useNavigation();
-    const { user, signOut } = useAuth();
+    const { user } = useAuth();
     const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
     const [restaurants, setRestaurants] = useState([]);
     const [allRestaurants, setAllRestaurants] = useState([]);
-    const [swipedCards, setSwipedCards] = useState([]);
+    const [setSwipedCards] = useState([]);
     const [likedRestaurants, setLikedRestaurants] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -94,7 +94,7 @@ const HomeScreen = () => {
 
             const location = await Location.getCurrentPositionAsync({});
             const coords = `${location.coords.latitude},${location.coords.longitude}`;
-            console.log("📍 User Location:", coords);
+            console.log(" User Location:", coords);
             const results = await fetchNearbyRestaurants(coords);
             setAllRestaurants(results);
             setRestaurants(results);
@@ -311,7 +311,7 @@ const HomeScreen = () => {
                 Extrapolate.CLAMP
             );
         },
-        onEnd: (event) => {
+        onEnd: () => {
             const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
             const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
 
@@ -358,11 +358,6 @@ const HomeScreen = () => {
             ],
         };
     });
-
-    const handleSignOut = async () => {
-        await signOut();
-        navigation.navigate('Login');
-    };
 
     const renderCard = (card) => {
         if (!card) return <Text>No card data</Text>;
