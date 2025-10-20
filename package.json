@@ -99,7 +99,7 @@
       "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(react-native|expo-asset|expo-constants|@react-native|expo-font|expo|expo-location|@expo|@unimodules|@react-navigation|react-native-screens|react-native-safe-area-context|nativewind|@react-native-async-storage/async-storage|react-native-css-interop|@testing-library/react-native|expo-modules-core)/)"
+      "node_modules/(?!(react-native|expo-asset|expo-constants|@react-native|expo-font|expo|expo-location|@expo|@unimodules|@react-navigation|react-native-screens|react-native-safe-area-context|nativewind|@react-native-async-storage/async-storage|react-native-css-interop|@testing-library/react-native|expo-modules-core|react-native-reanimated|react-native-reanimated-carousel)/)"
     ]
   },
   "expo": {
