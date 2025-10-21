@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, SafeAreaView, TouchableOpacity, Image, Alert, Linking, Dimensions, StyleSheet } from 'react-native';
+import { Text, View, SafeAreaView, TouchableOpacity, Image, Alert, Linking, Dimensions, StyleSheet, Modal, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import useAuth from '../hooks/useAuth';
@@ -19,7 +19,7 @@ import Constants from 'expo-constants';
 import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from '@react-native-firebase/firestore';
 
 const firestore = getFirestore();
-const { width: SCREEN_WIDTH, } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 const HomeScreen = () => {
@@ -28,8 +28,15 @@ const HomeScreen = () => {
     const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
 
     const [restaurants, setRestaurants] = useState([]);
+    const [allRestaurants, setAllRestaurants] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [likedRestaurants, setLikedRestaurants] = useState([]);
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        openNow: false,
+        rating4Plus: false,
+        rating3Plus: false,
+    });
 
     // Animation values
     const translateX = useSharedValue(0);
@@ -44,6 +51,7 @@ const HomeScreen = () => {
                 Alert.alert('Permission Denied', 'Using default location');
                 const mockLocation = '37.7749,-122.4194';
                 const results = await fetchNearbyRestaurants(mockLocation);
+                setAllRestaurants(results);
                 setRestaurants(results);
                 return;
             }
@@ -51,11 +59,51 @@ const HomeScreen = () => {
             const location = await Location.getCurrentPositionAsync({});
             const coords = `${location.coords.latitude},${location.coords.longitude}`;
             const results = await fetchNearbyRestaurants(coords);
+            setAllRestaurants(results);
             setRestaurants(results);
         };
 
         loadRestaurants();
     }, []);
+
+    // Apply filters
+    useEffect(() => {
+        applyFilters();
+    }, [filters, allRestaurants]);
+
+    const applyFilters = () => {
+        if (!allRestaurants.length) return;
+
+        const hasActiveFilters = Object.values(filters).some(v => v);
+
+        if (!hasActiveFilters) {
+            setRestaurants(allRestaurants);
+            setCurrentIndex(0);
+            return;
+        }
+
+        const filtered = allRestaurants.filter(restaurant => {
+            if (filters.openNow && !restaurant.opening_hours?.open_now) return false;
+            if (filters.rating4Plus && restaurant.rating < 4.0) return false;
+            if (filters.rating3Plus && restaurant.rating < 3.0) return false;
+            return true;
+        });
+
+        setRestaurants(filtered);
+        setCurrentIndex(0);
+    };
+
+    const resetFilters = () => {
+        setFilters({
+            openNow: false,
+            rating4Plus: false,
+            rating3Plus: false,
+        });
+    };
+
+    const toggleFilter = (key) => {
+        setFilters(prev => ({ ...prev, [key]: !prev[key] }));
+    };
 
     // Load liked restaurants
     useEffect(() => {
@@ -230,14 +278,12 @@ const HomeScreen = () => {
                     }
                 ]}
             >
-                {/* Card Image */}
                 <Image
                     source={{ uri: imageUrl }}
                     style={styles.cardImage}
                     resizeMode="cover"
                 />
 
-                {/* Card Info */}
                 <View style={styles.cardInfo}>
                     <Text style={styles.cardTitle} numberOfLines={2}>
                         {card.name || 'Unknown Restaurant'}
@@ -255,7 +301,6 @@ const HomeScreen = () => {
                         </Text>
                     )}
 
-                    {/* Service icons at bottom */}
                     <View style={styles.serviceIcons}>
                         <View style={styles.iconRow}>
                             <Text style={styles.emoji}>🚗</Text>
@@ -293,8 +338,11 @@ const HomeScreen = () => {
 
                 <Text style={styles.headerTitle}>Grup Lnch</Text>
 
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowFilters(true)} style={styles.filterButton}>
                     <Ionicons name="options" size={28} color="#64748b" />
+                    {Object.values(filters).some(v => v) && (
+                        <View style={styles.filterBadge} />
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -302,12 +350,10 @@ const HomeScreen = () => {
             <View style={styles.cardsContainer}>
                 {restaurants.length > 0 && currentIndex < restaurants.length ? (
                     <View style={styles.cardStack}>
-                        {/* Background cards */}
                         {restaurants.slice(currentIndex + 1, currentIndex + 3).map((restaurant, i) =>
                             renderCard(restaurant, currentIndex + i + 1)
                         )}
 
-                        {/* Top card with gesture */}
                         <PanGestureHandler onGestureEvent={gestureHandler}>
                             <Animated.View style={[styles.card, { zIndex: 1000 }, animatedStyle]}>
                                 <View style={styles.cardInner}>
@@ -364,6 +410,11 @@ const HomeScreen = () => {
                         <Text style={styles.emptyText}>
                             {restaurants.length === 0 ? 'Loading restaurants...' : 'No more restaurants!'}
                         </Text>
+                        {restaurants.length === 0 && allRestaurants.length > 0 && (
+                            <TouchableOpacity onPress={resetFilters} style={styles.resetButton}>
+                                <Text style={styles.resetButtonText}>Reset Filters</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
             </View>
@@ -384,6 +435,77 @@ const HomeScreen = () => {
                     <AntDesign name="heart" size={32} color="white" />
                 </TouchableOpacity>
             </View>
+
+            {/* Filter Modal */}
+            <Modal
+                visible={showFilters}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowFilters(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Filters</Text>
+                            <TouchableOpacity onPress={() => setShowFilters(false)}>
+                                <Ionicons name="close" size={28} color="#64748b" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.filterOptions} showsVerticalScrollIndicator={false}>
+                            <Text style={styles.sectionTitle}>Availability</Text>
+                            <TouchableOpacity
+                                style={styles.filterOption}
+                                onPress={() => toggleFilter('openNow')}
+                            >
+                                <Text style={styles.filterLabel}>Open Now</Text>
+                                <View style={[styles.checkbox, filters.openNow && styles.checkboxActive]}>
+                                    {filters.openNow && <Ionicons name="checkmark" size={20} color="white" />}
+                                </View>
+                            </TouchableOpacity>
+
+                            <Text style={styles.sectionTitle}>Rating</Text>
+                            <TouchableOpacity
+                                style={styles.filterOption}
+                                onPress={() => toggleFilter('rating4Plus')}
+                            >
+                                <Text style={styles.filterLabel}>4.0+ Stars</Text>
+                                <View style={[styles.checkbox, filters.rating4Plus && styles.checkboxActive]}>
+                                    {filters.rating4Plus && <Ionicons name="checkmark" size={20} color="white" />}
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.filterOption}
+                                onPress={() => toggleFilter('rating3Plus')}
+                            >
+                                <Text style={styles.filterLabel}>3.0+ Stars</Text>
+                                <View style={[styles.checkbox, filters.rating3Plus && styles.checkboxActive]}>
+                                    {filters.rating3Plus && <Ionicons name="checkmark" size={20} color="white" />}
+                                </View>
+                            </TouchableOpacity>
+                        </ScrollView>
+
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                style={styles.resetFiltersButton}
+                                onPress={resetFilters}
+                            >
+                                <Text style={styles.resetFiltersText}>Reset All</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.applyButton}
+                                onPress={() => setShowFilters(false)}
+                            >
+                                <Text style={styles.applyButtonText}>
+                                    Apply ({restaurants.length} restaurants)
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -391,7 +513,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#64748b', // Blue-gray background like in your screenshot
+        backgroundColor: '#64748b',
     },
     header: {
         flexDirection: 'row',
@@ -412,6 +534,18 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         color: '#1e293b',
+    },
+    filterButton: {
+        position: 'relative',
+    },
+    filterBadge: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#ef4444',
     },
     cardsContainer: {
         flex: 1,
@@ -518,6 +652,110 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 18,
+        color: 'white',
+        marginBottom: 16,
+    },
+    resetButton: {
+        backgroundColor: 'white',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 20,
+    },
+    resetButtonText: {
+        color: '#64748b',
+        fontWeight: '600',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingTop: 20,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e2e8f0',
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1e293b',
+    },
+    filterOptions: {
+        padding: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1e293b',
+        marginTop: 12,
+        marginBottom: 12,
+    },
+    filterOption: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9',
+    },
+    filterLabel: {
+        fontSize: 16,
+        color: '#475569',
+    },
+    checkbox: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: '#cbd5e1',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkboxActive: {
+        backgroundColor: '#3b82f6',
+        borderColor: '#3b82f6',
+    },
+    modalFooter: {
+        flexDirection: 'row',
+        padding: 20,
+        gap: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#e2e8f0',
+    },
+    resetFiltersButton: {
+        flex: 1,
+        paddingVertical: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#e2e8f0',
+        alignItems: 'center',
+    },
+    resetFiltersText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#64748b',
+    },
+    applyButton: {
+        flex: 2,
+        backgroundColor: '#3b82f6',
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    applyButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
         color: 'white',
     },
 });
