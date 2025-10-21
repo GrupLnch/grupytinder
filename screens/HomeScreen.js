@@ -7,19 +7,21 @@ import { Ionicons, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import Animated, {useSharedValue, useAnimatedStyle, useAnimatedGestureHandler, withSpring, withTiming, runOnJS, interpolate, Extrapolate,} from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { fetchNearbyRestaurants } from '../utils/placesApi';
-import firestore from '@react-native-firebase/firestore';
 import Constants from 'expo-constants';
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from '@react-native-firebase/firestore';
+
+const firestore = getFirestore();
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 const HomeScreen = () => {
     const navigation = useNavigation();
-    const { user, signOut } = useAuth();
+    const { user } = useAuth();
     const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
     const [restaurants, setRestaurants] = useState([]);
     const [allRestaurants, setAllRestaurants] = useState([]);
-    const [swipedCards, setSwipedCards] = useState([]);
+    const [setSwipedCards] = useState([]);
     const [likedRestaurants, setLikedRestaurants] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -92,7 +94,7 @@ const HomeScreen = () => {
 
             const location = await Location.getCurrentPositionAsync({});
             const coords = `${location.coords.latitude},${location.coords.longitude}`;
-            console.log("📍 User Location:", coords);
+            console.log(" User Location:", coords);
             const results = await fetchNearbyRestaurants(coords);
             setAllRestaurants(results);
             setRestaurants(results);
@@ -165,11 +167,7 @@ const HomeScreen = () => {
         if (!user?.uid) return;
 
         try {
-            const querySnapshot = await firestore()
-                .collection('users')
-                .doc(user.uid)
-                .collection('likedRestaurants')
-                .get();
+            const querySnapshot = await getDocs(collection(firestore, 'users', user.uid, 'likedRestaurants'));
 
             const likedPlaces = [];
             querySnapshot.forEach((doc) => {
@@ -204,17 +202,11 @@ const HomeScreen = () => {
                 photos: restaurant.photos,
                 geometry: restaurant.geometry,
                 opening_hours: restaurant.opening_hours,
-                savedAt: firestore.FieldValue.serverTimestamp(),
+                savedAt: serverTimestamp(),
             };
 
             // Save to Firestore
-            await firestore()
-                .collection('users')
-                .doc(user.uid)
-                .collection('likedRestaurants')
-                .doc(restaurant.place_id)
-                .set(restaurantData);
-
+            await setDoc(doc(firestore, 'users', user.uid, 'likedRestaurants', restaurant.place_id), restaurantData);
             // Update local state
             setLikedRestaurants(prev => [...prev, restaurantData]);
 
@@ -235,12 +227,7 @@ const HomeScreen = () => {
 
             if (isLiked) {
                 // Delete from Firestore
-                await firestore()
-                    .collection('users')
-                    .doc(user.uid)
-                    .collection('likedRestaurants')
-                    .doc(restaurant.place_id)
-                    .delete();
+                await deleteDoc(doc(firestore, 'users', user.uid, 'likedRestaurants', restaurant.place_id));
 
                 // Update local state
                 setLikedRestaurants(prev => prev.filter(r => r.place_id !== restaurant.place_id));
@@ -324,7 +311,7 @@ const HomeScreen = () => {
                 Extrapolate.CLAMP
             );
         },
-        onEnd: (event) => {
+        onEnd: () => {
             const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
             const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
 
@@ -371,11 +358,6 @@ const HomeScreen = () => {
             ],
         };
     });
-
-    const handleSignOut = async () => {
-        await signOut();
-        navigation.navigate('Login');
-    };
 
     const renderCard = (card) => {
         if (!card) return <Text>No card data</Text>;
