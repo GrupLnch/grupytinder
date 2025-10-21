@@ -498,13 +498,15 @@ const HomeScreen = () => {
             {/* Cards Section */}
             <View className="flex-1 justify-center items-center">
                 {restaurants.length > 0 && currentIndex < restaurants.length ? (
-                    <View className="relative">
+                    <View className="relative" style={{ width: 340, height: 420 }}>
                         {/* Background cards for stacking effect */}
                         {restaurants.slice(currentIndex + 1, currentIndex + 3).map((restaurant, index) => (
-                            <View // Apply card styles to the wrapper View
-                                key={`bg-${currentIndex + index + 1}`}
+                            <View
+                                key={`bg-${restaurant.place_id || currentIndex + index + 1}`}
                                 className="absolute justify-center items-center bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
                                 style={{
+                                    top: 0,
+                                    left: 0,
                                     height: 420,
                                     width: 340,
                                     shadowColor: '#000',
@@ -514,23 +516,26 @@ const HomeScreen = () => {
                                     elevation: 15,
                                     transform: [
                                         { scale: 1 - (index + 1) * 0.05 },
-                                        { translateY: -(index + 1) * 10 }
+                                        { translateY: (index + 1) * 10 }
                                     ],
                                     zIndex: -(index + 1),
-                                    opacity: 1 - (index + 1) * 0.2
+                                    opacity: 1 - (index + 1) * 0.3
                                 }}
                             >
-                                {renderCardContent(restaurant)} {/* Use the new function */}
+                                {renderCardContent(restaurant)}
                             </View>
                         ))}
 
                         {/* Main card with gesture handling */}
                         <PanGestureHandler onGestureEvent={gestureHandler}>
-                            <Animated.View // Apply card styles to the Animated.View
+                            <Animated.View
                                 className="justify-center items-center bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
                                 style={[
                                     animatedStyle,
                                     {
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
                                         height: 420,
                                         width: 340,
                                         shadowColor: '#000',
