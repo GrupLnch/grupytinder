@@ -8,7 +8,7 @@ import { getFirestore, collection, getDocs, doc, deleteDoc } from '@react-native
 
 const firestore = getFirestore();
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH - 32;
+// const CARD_WIDTH = SCREEN_WIDTH - 32;
 
 const FavoritesScreen = () => {
     const { user } = useAuth();
@@ -118,7 +118,7 @@ const FavoritesScreen = () => {
 
         const openNow = item.opening_hours?.open_now;
         const rating = item.rating;
-        const ratingsTotal = item.user_ratings_total;
+        // const ratingsTotal = item.user_ratings_total;
         const vicinity = item.vicinity;
 
         return (
