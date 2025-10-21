@@ -73,11 +73,25 @@ const HomeScreen = () => {
     const scale = useSharedValue(1);
     const rotateZ = useSharedValue(0);
 
-    // Ref for programmatic swiping
-    const swiperRef = useRef({
-        swipeLeft: () => handleSwipe('left'),
-        swipeRight: () => handleSwipe('right'),
+    const handleSwipe = React.useCallback((direction) => {
+    if (currentIndex >= restaurants.length) return;
+
+    const onSwiped = direction === 'left' ? onSwipedLeft : onSwipedRight;
+    const toValue = direction === 'left' ? -SCREEN_WIDTH * 1.5 : SCREEN_WIDTH * 1.5;
+
+    translateX.value = withTiming(toValue, { duration: 300 }, () => {
+        runOnJS(() => {
+            onSwiped(currentIndex);
+            setCurrentIndex(prev => prev + 1);
+
+            // Reset animation values for the next card
+            translateX.value = 0;
+            translateY.value = 0;
+            rotateZ.value = 0;
+            scale.value = 1;
+        })();
     });
+}, [currentIndex, restaurants.length]);
 
     // Load restaurants based on location
     useEffect(() => {
@@ -259,31 +273,6 @@ const HomeScreen = () => {
         console.log('Swiped right (liked):', restaurant.name);
     };
 
-    const handleSwipe = (direction) => {
-        if (currentIndex >= restaurants.length) return;
-
-        const toValue = direction === 'left' ? -SCREEN_WIDTH * 1.5 : SCREEN_WIDTH * 1.5;
-
-        translateX.value = withTiming(toValue, { duration: 300 }, () => {
-            runOnJS(() => {
-                if (direction === 'left') {
-                    onSwipedLeft(currentIndex);
-                } else {
-                    onSwipedRight(currentIndex);
-                }
-
-                // Move to next card
-                setCurrentIndex(prev => prev + 1);
-
-                // Reset animation values
-                translateX.value = 0;
-                translateY.value = 0;
-                rotateZ.value = 0;
-                scale.value = 1;
-            })();
-        });
-    };
-
     // Gesture handler
     const gestureHandler = useAnimatedGestureHandler({
         onStart: (_, context) => {
@@ -294,7 +283,6 @@ const HomeScreen = () => {
             translateX.value = context.startX + event.translationX;
             translateY.value = context.startY + event.translationY;
 
-            // Rotation based on horizontal movement
             rotateZ.value = interpolate(
                 translateX.value,
                 [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
@@ -302,7 +290,6 @@ const HomeScreen = () => {
                 Extrapolate.CLAMP
             );
 
-            // Scale effect
             const distance = Math.sqrt(translateX.value ** 2 + translateY.value ** 2);
             scale.value = interpolate(
                 distance,
@@ -316,26 +303,34 @@ const HomeScreen = () => {
             const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
 
             if (shouldSwipeLeft) {
-                translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 }, () => {
-                    runOnJS(() => {
-                        onSwipedLeft(currentIndex);
-                        setCurrentIndex(prev => prev + 1);
-                        translateX.value = 0;
-                        translateY.value = 0;
-                        rotateZ.value = 0;
-                        scale.value = 1;
-                    })();
+                const handleLeftSwipe = () => {
+                    onSwipedLeft(currentIndex);
+                    setCurrentIndex(prev => prev + 1);
+                    translateX.value = 0;
+                    translateY.value = 0;
+                    rotateZ.value = 0;
+                    scale.value = 1;
+                };
+
+                translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 }, (finished) => {
+                    if (finished) {
+                        runOnJS(handleLeftSwipe);
+                    }
                 });
             } else if (shouldSwipeRight) {
-                translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 }, () => {
-                    runOnJS(() => {
-                        onSwipedRight(currentIndex);
-                        setCurrentIndex(prev => prev + 1);
-                        translateX.value = 0;
-                        translateY.value = 0;
-                        rotateZ.value = 0;
-                        scale.value = 1;
-                    })();
+                const handleRightSwipe = () => {
+                    onSwipedRight(currentIndex);
+                    setCurrentIndex(prev => prev + 1);
+                    translateX.value = 0;
+                    translateY.value = 0;
+                    rotateZ.value = 0;
+                    scale.value = 1;
+                };
+
+                translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 }, (finished) => {
+                    if (finished) {
+                        runOnJS(handleRightSwipe);
+                    }
                 });
             } else {
                 // Snap back
@@ -359,8 +354,8 @@ const HomeScreen = () => {
         };
     });
 
-    const renderCard = (card) => {
-        if (!card) return <Text>No card data</Text>;
+    const renderCardContent = (card) => {
+        if (!card) return null;
 
         const photoReference = card.photos?.[0]?.photo_reference;
         const imageUrl = photoReference
@@ -380,15 +375,7 @@ const HomeScreen = () => {
         const isAlreadyLiked = likedRestaurants.some(r => r.place_id === card.place_id);
 
         return (
-            <View className="justify-center items-center bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden" style={{
-                height: 420,
-                width: 340,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.25,
-                shadowRadius: 20,
-                elevation: 15
-            }}>
+            <>
                 {/* Card Image with Overlay */}
                 <View className="relative">
                     <Image
@@ -396,10 +383,8 @@ const HomeScreen = () => {
                         className="h-64 w-80 rounded-2xl"
                         resizeMode="cover"
                     />
-                    {/* Gradient Overlay for better text readability */}
                     <View className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-2xl" />
 
-                    {/* Like indicator */}
                     {isAlreadyLiked && (
                         <View className="absolute top-3 right-3 bg-red-500 rounded-full p-2">
                             <AntDesign name="heart" size={16} color="white" />
@@ -457,7 +442,7 @@ const HomeScreen = () => {
                             onPress={() => {
                                 const { lat, lng } = card.geometry?.location || {};
                                 if (lat && lng) {
-                                    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                                    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
                                     Linking.openURL(url);
                                 }
                             }}
@@ -467,7 +452,7 @@ const HomeScreen = () => {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+            </>
         );
     };
 
@@ -486,7 +471,7 @@ const HomeScreen = () => {
                     </View>
                 </TouchableOpacity>
 
-                {/* Centered Logo - Enhanced styling */}
+                {/* Centered Logo */}
                 <View className="flex-1 items-center">
                     <Text className="text-4xl font-extrabold" style={{
                         fontFamily: 'System',
@@ -502,7 +487,7 @@ const HomeScreen = () => {
                     <View className="w-12 h-0.5 bg-white/50 rounded-full mt-1" />
                 </View>
 
-                {/* Filter Icon - Enhanced */}
+                {/* Filter Icon */}
                 <TouchableOpacity onPress={() => setShowFilters(true)}>
                     <View className="bg-white/30 rounded-full p-3 border border-white/40 shadow-md shadow-black/30">
                         <Ionicons name="options" size={26} color="#FFF" style={{ textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }} />
@@ -510,16 +495,23 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Cards Section - Updated with Reanimated */}
+            {/* Cards Section */}
             <View className="flex-1 justify-center items-center">
                 {restaurants.length > 0 && currentIndex < restaurants.length ? (
                     <View className="relative">
                         {/* Background cards for stacking effect */}
                         {restaurants.slice(currentIndex + 1, currentIndex + 3).map((restaurant, index) => (
-                            <View
+                            <View // Apply card styles to the wrapper View
                                 key={`bg-${currentIndex + index + 1}`}
-                                className="absolute"
+                                className="absolute justify-center items-center bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
                                 style={{
+                                    height: 420,
+                                    width: 340,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 10 },
+                                    shadowOpacity: 0.25,
+                                    shadowRadius: 20,
+                                    elevation: 15,
                                     transform: [
                                         { scale: 1 - (index + 1) * 0.05 },
                                         { translateY: -(index + 1) * 10 }
@@ -528,14 +520,29 @@ const HomeScreen = () => {
                                     opacity: 1 - (index + 1) * 0.2
                                 }}
                             >
-                                {renderCard(restaurant)}
+                                {renderCardContent(restaurant)} {/* Use the new function */}
                             </View>
                         ))}
 
                         {/* Main card with gesture handling */}
                         <PanGestureHandler onGestureEvent={gestureHandler}>
-                            <Animated.View style={[animatedStyle, { zIndex: 10 }]}>
-                                {renderCard(restaurants[currentIndex])}
+                            <Animated.View // Apply card styles to the Animated.View
+                                className="justify-center items-center bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
+                                style={[
+                                    animatedStyle,
+                                    {
+                                        height: 420,
+                                        width: 340,
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 10 },
+                                        shadowOpacity: 0.25,
+                                        shadowRadius: 20,
+                                        elevation: 15,
+                                        zIndex: 10
+                                    }
+                                ]}
+                            >
+                                {renderCardContent(restaurants[currentIndex])}
                             </Animated.View>
                         </PanGestureHandler>
                     </View>
@@ -554,7 +561,7 @@ const HomeScreen = () => {
             {/* Like/Dislike Buttons - Updated handlers */}
             <View className="flex-row justify-center items-center space-x-12 py-6 mb-8">
                 <TouchableOpacity
-                    onPress={() => swiperRef.current.swipeLeft()}
+                    onPress={() => handleSwipe('left')} // UPDATED
                     style={{
                         shadowColor: '#ff6b6b',
                         shadowOffset: { width: 0, height: 8 },
@@ -567,7 +574,7 @@ const HomeScreen = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={() => swiperRef.current.swipeRight()}
+                    onPress={() => handleSwipe('right')} // UPDATED
                     style={{
                         shadowColor: '#51cf66',
                         shadowOffset: { width: 0, height: 8 },
@@ -579,7 +586,6 @@ const HomeScreen = () => {
                     <AntDesign name="heart" size={28} color="white" />
                 </TouchableOpacity>
             </View>
-
             {/* Filter Modal */}
             <Modal
                 visible={showFilters}
