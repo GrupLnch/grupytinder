@@ -85,10 +85,15 @@
       "!**/node_modules/**",
       "!**/babel.config.js",
       "!**/expo-env.d.ts",
-      "!**/.expo/**"
+      "!**/.expo/**",
+      "!**/__mocks__/**",
+      "!**/__tests__/**"
     ],
     "moduleNameMapper": {
-      "^screens/(.*)$": "<rootDir>/screens/$1"
+      "^screens/(.*)$": "<rootDir>/screens/$1",
+      "^hooks/(.*)$": "<rootDir>/hooks/$1",
+      "^utils/(.*)$": "<rootDir>/utils/$1",
+      "^@env$": "<rootDir>/__mocks__/@env.js"
     },
     "testMatch": [
       "<rootDir>/__tests__/**/*.test.js",
@@ -99,7 +104,7 @@
       "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(react-native|expo-asset|expo-constants|@react-native|expo-font|expo|expo-location|@expo|@unimodules|@react-navigation|react-native-screens|react-native-safe-area-context|nativewind|@react-native-async-storage/async-storage|react-native-css-interop|@testing-library/react-native|expo-modules-core|react-native-reanimated|react-native-reanimated-carousel|@react-native-firebase/.*|firebase)/)"
+      "node_modules/(?!(react-native|expo-asset|expo-constants|@react-native|expo-font|expo|expo-location|@expo|@unimodules|@react-navigation|react-native-screens|react-native-safe-area-context|nativewind|@react-native-async-storage/async-storage|react-native-css-interop|@testing-library/react-native|expo-modules-core|react-native-reanimated|react-native-gesture-handler|@react-native-firebase/.*)/)"
     ]
   },
   "expo": {
