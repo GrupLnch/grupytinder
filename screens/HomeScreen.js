@@ -33,9 +33,42 @@ const HomeScreen = () => {
     const [likedRestaurants, setLikedRestaurants] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({
+        // Availability
         openNow: false,
+
+        // Rating
         rating4Plus: false,
         rating3Plus: false,
+
+        // Cuisine Type
+        american: false,
+        italian: false,
+        mexican: false,
+        chinese: false,
+        japanese: false,
+        indian: false,
+        thai: false,
+
+        // Meal Type
+        breakfast: false,
+        lunch: false,
+        dinner: false,
+        dessert: false,
+
+        // Dietary
+        vegetarian: false,
+        vegan: false,
+
+        // Price Range
+        budget: false,        // $
+        moderate: false,      // $$
+        expensive: false,     // $$$
+
+        // Atmosphere
+        casual: false,
+        formal: false,
+        romantic: false,
+        family: false,
     });
 
     // Animation values
@@ -83,9 +116,47 @@ const HomeScreen = () => {
         }
 
         const filtered = allRestaurants.filter(restaurant => {
+            const name = restaurant.name?.toLowerCase() || '';
+            const types = restaurant.types || [];
+            const rating = restaurant.rating || 0;
+
+            // Availability
             if (filters.openNow && !restaurant.opening_hours?.open_now) return false;
-            if (filters.rating4Plus && restaurant.rating < 4.0) return false;
-            if (filters.rating3Plus && restaurant.rating < 3.0) return false;
+
+            // Rating
+            if (filters.rating4Plus && rating < 4.0) return false;
+            if (filters.rating3Plus && rating < 3.0) return false;
+
+            // Cuisine Type (keyword matching)
+            if (filters.american && !name.includes('american') && !name.includes('burger') && !name.includes('grill')) return false;
+            if (filters.italian && !name.includes('italian') && !name.includes('pizza') && !name.includes('pasta')) return false;
+            if (filters.mexican && !name.includes('mexican') && !name.includes('taco') && !name.includes('burrito')) return false;
+            if (filters.chinese && !name.includes('chinese') && !name.includes('wok')) return false;
+            if (filters.japanese && !name.includes('japanese') && !name.includes('sushi') && !name.includes('ramen')) return false;
+            if (filters.indian && !name.includes('indian') && !name.includes('curry')) return false;
+            if (filters.thai && !name.includes('thai') && !name.includes('pad thai')) return false;
+
+            // Meal Type
+            if (filters.breakfast && !name.includes('breakfast') && !name.includes('cafe') && !types.includes('cafe')) return false;
+            if (filters.lunch && !types.includes('restaurant') && !types.includes('meal_takeaway')) return false;
+            if (filters.dinner && !types.includes('restaurant') && !types.includes('night_club')) return false;
+            if (filters.dessert && !name.includes('dessert') && !name.includes('ice cream') && !name.includes('bakery') && !types.includes('bakery')) return false;
+
+            // Dietary
+            if (filters.vegetarian && !name.includes('vegetarian') && !name.includes('veg') && !name.includes('salad')) return false;
+            if (filters.vegan && !name.includes('vegan')) return false;
+
+            // Price Range (using rating as proxy since Google doesn't always provide price_level)
+            if (filters.budget && rating > 3.5) return false;
+            if (filters.moderate && (rating < 3.5 || rating > 4.3)) return false;
+            if (filters.expensive && rating < 4.0) return false;
+
+            // Atmosphere
+            if (filters.casual && rating > 4.3) return false;
+            if (filters.formal && rating < 4.0) return false;
+            if (filters.romantic && rating < 4.0) return false;
+            if (filters.family && (!types.includes('restaurant') || rating < 3.5)) return false;
+
             return true;
         });
 
@@ -98,6 +169,26 @@ const HomeScreen = () => {
             openNow: false,
             rating4Plus: false,
             rating3Plus: false,
+            american: false,
+            italian: false,
+            mexican: false,
+            chinese: false,
+            japanese: false,
+            indian: false,
+            thai: false,
+            breakfast: false,
+            lunch: false,
+            dinner: false,
+            dessert: false,
+            vegetarian: false,
+            vegan: false,
+            budget: false,
+            moderate: false,
+            expensive: false,
+            casual: false,
+            formal: false,
+            romantic: false,
+            family: false,
         });
     };
 
@@ -453,37 +544,140 @@ const HomeScreen = () => {
                         </View>
 
                         <ScrollView style={styles.filterOptions} showsVerticalScrollIndicator={false}>
-                            <Text style={styles.sectionTitle}>Availability</Text>
-                            <TouchableOpacity
-                                style={styles.filterOption}
-                                onPress={() => toggleFilter('openNow')}
-                            >
+                            {/* Availability */}
+                            <Text style={styles.sectionTitle}>⏰ Availability</Text>
+                            <TouchableOpacity style={styles.filterOption} onPress={() => toggleFilter('openNow')}>
                                 <Text style={styles.filterLabel}>Open Now</Text>
                                 <View style={[styles.checkbox, filters.openNow && styles.checkboxActive]}>
                                     {filters.openNow && <Ionicons name="checkmark" size={20} color="white" />}
                                 </View>
                             </TouchableOpacity>
 
-                            <Text style={styles.sectionTitle}>Rating</Text>
-                            <TouchableOpacity
-                                style={styles.filterOption}
-                                onPress={() => toggleFilter('rating4Plus')}
-                            >
+                            {/* Rating */}
+                            <Text style={styles.sectionTitle}>⭐ Rating</Text>
+                            <TouchableOpacity style={styles.filterOption} onPress={() => toggleFilter('rating4Plus')}>
                                 <Text style={styles.filterLabel}>4.0+ Stars</Text>
                                 <View style={[styles.checkbox, filters.rating4Plus && styles.checkboxActive]}>
                                     {filters.rating4Plus && <Ionicons name="checkmark" size={20} color="white" />}
                                 </View>
                             </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={styles.filterOption}
-                                onPress={() => toggleFilter('rating3Plus')}
-                            >
+                            <TouchableOpacity style={styles.filterOption} onPress={() => toggleFilter('rating3Plus')}>
                                 <Text style={styles.filterLabel}>3.0+ Stars</Text>
                                 <View style={[styles.checkbox, filters.rating3Plus && styles.checkboxActive]}>
                                     {filters.rating3Plus && <Ionicons name="checkmark" size={20} color="white" />}
                                 </View>
                             </TouchableOpacity>
+
+                            {/* Cuisine Type */}
+                            <Text style={styles.sectionTitle}>🍽️ Cuisine Type</Text>
+                            <View style={styles.chipContainer}>
+                                {[
+                                    { key: 'american', label: 'American', icon: '🍔' },
+                                    { key: 'italian', label: 'Italian', icon: '🍕' },
+                                    { key: 'mexican', label: 'Mexican', icon: '🌮' },
+                                    { key: 'chinese', label: 'Chinese', icon: '🥡' },
+                                    { key: 'japanese', label: 'Japanese', icon: '🍣' },
+                                    { key: 'indian', label: 'Indian', icon: '🍛' },
+                                    { key: 'thai', label: 'Thai', icon: '🍜' },
+                                ].map(cuisine => (
+                                    <TouchableOpacity
+                                        key={cuisine.key}
+                                        style={[styles.chip, filters[cuisine.key] && styles.chipActive]}
+                                        onPress={() => toggleFilter(cuisine.key)}
+                                    >
+                                        <Text style={styles.chipEmoji}>{cuisine.icon}</Text>
+                                        <Text style={[styles.chipText, filters[cuisine.key] && styles.chipTextActive]}>
+                                            {cuisine.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* Meal Type */}
+                            <Text style={styles.sectionTitle}>🕐 Meal Type</Text>
+                            <View style={styles.chipContainer}>
+                                {[
+                                    { key: 'breakfast', label: 'Breakfast', icon: '🥞' },
+                                    { key: 'lunch', label: 'Lunch', icon: '🥗' },
+                                    { key: 'dinner', label: 'Dinner', icon: '🍽️' },
+                                    { key: 'dessert', label: 'Dessert', icon: '🍰' },
+                                ].map(meal => (
+                                    <TouchableOpacity
+                                        key={meal.key}
+                                        style={[styles.chip, filters[meal.key] && styles.chipActive]}
+                                        onPress={() => toggleFilter(meal.key)}
+                                    >
+                                        <Text style={styles.chipEmoji}>{meal.icon}</Text>
+                                        <Text style={[styles.chipText, filters[meal.key] && styles.chipTextActive]}>
+                                            {meal.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* Dietary */}
+                            <Text style={styles.sectionTitle}>🥬 Dietary Preferences</Text>
+                            <View style={styles.chipContainer}>
+                                {[
+                                    { key: 'vegetarian', label: 'Vegetarian', icon: '🥗' },
+                                    { key: 'vegan', label: 'Vegan', icon: '🌱' },
+                                ].map(diet => (
+                                    <TouchableOpacity
+                                        key={diet.key}
+                                        style={[styles.chip, filters[diet.key] && styles.chipActive]}
+                                        onPress={() => toggleFilter(diet.key)}
+                                    >
+                                        <Text style={styles.chipEmoji}>{diet.icon}</Text>
+                                        <Text style={[styles.chipText, filters[diet.key] && styles.chipTextActive]}>
+                                            {diet.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* Price Range */}
+                            <Text style={styles.sectionTitle}>💰 Price Range</Text>
+                            <View style={styles.chipContainer}>
+                                {[
+                                    { key: 'budget', label: 'Budget', icon: '$' },
+                                    { key: 'moderate', label: 'Moderate', icon: '$$' },
+                                    { key: 'expensive', label: 'Upscale', icon: '$$$' },
+                                ].map(price => (
+                                    <TouchableOpacity
+                                        key={price.key}
+                                        style={[styles.chip, filters[price.key] && styles.chipActive]}
+                                        onPress={() => toggleFilter(price.key)}
+                                    >
+                                        <Text style={[styles.chipText, filters[price.key] && styles.chipTextActive]}>
+                                            {price.icon} {price.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* Atmosphere */}
+                            <Text style={styles.sectionTitle}>✨ Atmosphere</Text>
+                            <View style={styles.chipContainer}>
+                                {[
+                                    { key: 'casual', label: 'Casual', icon: '👕' },
+                                    { key: 'formal', label: 'Formal', icon: '🎩' },
+                                    { key: 'romantic', label: 'Romantic', icon: '💕' },
+                                    { key: 'family', label: 'Family-Friendly', icon: '👨‍👩‍👧‍👦' },
+                                ].map(vibe => (
+                                    <TouchableOpacity
+                                        key={vibe.key}
+                                        style={[styles.chip, filters[vibe.key] && styles.chipActive]}
+                                        onPress={() => toggleFilter(vibe.key)}
+                                    >
+                                        <Text style={styles.chipEmoji}>{vibe.icon}</Text>
+                                        <Text style={[styles.chipText, filters[vibe.key] && styles.chipTextActive]}>
+                                            {vibe.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <View style={{ height: 20 }} />
                         </ScrollView>
 
                         <View style={styles.modalFooter}>
@@ -546,6 +740,38 @@ const styles = StyleSheet.create({
         height: 10,
         borderRadius: 5,
         backgroundColor: '#ef4444',
+    },
+    chipContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginBottom: 8,
+    },
+    chip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        backgroundColor: '#f1f5f9',
+        borderWidth: 2,
+        borderColor: '#e2e8f0',
+        gap: 6,
+    },
+    chipActive: {
+        backgroundColor: '#3b82f6',
+        borderColor: '#3b82f6',
+    },
+    chipEmoji: {
+        fontSize: 16,
+    },
+    chipText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#475569',
+    },
+    chipTextActive: {
+        color: 'white',
     },
     cardsContainer: {
         flex: 1,
