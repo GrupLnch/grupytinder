@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {Text, View, SafeAreaView, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
+import { Text, View, SafeAreaView, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -28,31 +28,49 @@ const ProfileScreen = () => {
             }
 
             try {
-                const profileDoc = await getDoc(doc(firestore, 'users', user.uid));
+                console.log("Loading profile for user:", user.uid);
+                const profileRef = doc(firestore, 'users', user.uid);
+                const profileDoc = await getDoc(profileRef);
 
-                if (profileDoc.exists) {
+                if (profileDoc.exists()) {
                     const profileData = profileDoc.data();
+                    console.log("Profile data loaded:", profileData);
+
                     setProfile({
-                        displayName: profileData.displayName || user.displayName || '',
-                        foodInterests: profileData.foodInterests || '',
-                        favoriteCuisines: profileData.favoriteCuisines || '',
-                        dietaryRestrictions: profileData.dietaryRestrictions || '',
-                        bio: profileData.bio || ''
+                        displayName: profileData?.displayName || user.displayName || '',
+                        foodInterests: profileData?.foodInterests || '',
+                        favoriteCuisines: profileData?.favoriteCuisines || '',
+                        dietaryRestrictions: profileData?.dietaryRestrictions || '',
+                        bio: profileData?.bio || ''
                     });
                 } else {
+                    console.log("No profile document found, using defaults");
                     // Initialize with user's display name from auth
-                    setProfile(prev => ({
-                        ...prev,
-                        displayName: user.displayName || ''
-                    }));
+                    setProfile({
+                        displayName: user.displayName || '',
+                        foodInterests: '',
+                        favoriteCuisines: '',
+                        dietaryRestrictions: '',
+                        bio: ''
+                    });
                 }
             } catch (error) {
                 console.error("Error loading profile:", error);
-                Alert.alert("Error", "Failed to load profile data");
+                Alert.alert("Error", "Failed to load profile data. Please try again.");
+
+                // Set defaults on error
+                setProfile({
+                    displayName: user.displayName || '',
+                    foodInterests: '',
+                    favoriteCuisines: '',
+                    dietaryRestrictions: '',
+                    bio: ''
+                });
             } finally {
                 setLoading(false);
             }
         };
+
         loadUserProfile();
     }, [user]);
 
@@ -66,10 +84,14 @@ const ProfileScreen = () => {
             setSaving(true);
 
             const profileData = {
-                ...profile,
+                displayName: profile.displayName || '',
+                foodInterests: profile.foodInterests || '',
+                favoriteCuisines: profile.favoriteCuisines || '',
+                dietaryRestrictions: profile.dietaryRestrictions || '',
+                bio: profile.bio || '',
                 updatedAt: serverTimestamp(),
-                email: user.email,
-                photoURL: user.photoURL
+                email: user.email || '',
+                photoURL: user.photoURL || ''
             };
 
             await setDoc(doc(firestore, 'users', user.uid), profileData, { merge: true });
@@ -77,7 +99,7 @@ const ProfileScreen = () => {
             Alert.alert("Success", "Profile updated successfully!");
         } catch (error) {
             console.error("Error saving profile:", error);
-            Alert.alert("Error", "Failed to save profile");
+            Alert.alert("Error", "Failed to save profile. Please try again.");
         } finally {
             setSaving(false);
         }
@@ -114,138 +136,330 @@ const ProfileScreen = () => {
 
     if (loading) {
         return (
-            <SafeAreaView className="flex-1 bg-white justify-center items-center">
-                <ActivityIndicator size="large" color="#FF5733" />
-                <Text className="mt-2 text-gray-600">Loading profile...</Text>
+            <SafeAreaView style={styles.container}>
+                <View style={styles.centerContent}>
+                    <ActivityIndicator size="large" color="#3b82f6" />
+                    <Text style={styles.loadingText}>Loading profile...</Text>
+                </View>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView
-                className="flex-1"
+                style={styles.flex}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
                 {/* Header */}
-                <View className="flex-row items-center justify-between p-4 bg-white shadow-sm">
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="#1e293b" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold">Profile</Text>
+                    <Text style={styles.headerTitle}>Profile</Text>
                     <TouchableOpacity
                         onPress={saveProfile}
                         disabled={saving}
-                        className="bg-orange-500 px-4 py-2 rounded-lg"
+                        style={styles.saveButton}
                     >
                         {saving ? (
                             <ActivityIndicator size="small" color="white" />
                         ) : (
-                            <Text className="text-white font-semibold">Save</Text>
+                            <Text style={styles.saveButtonText}>Save</Text>
                         )}
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                    {/* Profile Picture Section */}
-                    <View className="items-center py-6 bg-white mb-4">
-                        <Image
-                            className="h-24 w-24 rounded-full border-4 border-orange-200"
-                            source={{ uri: user?.photoURL || 'https://via.placeholder.com/150' }}
-                        />
-                        <Text className="text-lg font-semibold mt-2 text-gray-800">
-                            {user?.email}
-                        </Text>
-                        <Text className="text-sm text-gray-500">
-                            Member since {new Date(user?.metadata?.creationTime).toLocaleDateString()}
+                <ScrollView
+                    style={styles.scrollView}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                >
+                    {/* Profile Header Section */}
+                    <View style={styles.profileHeader}>
+                        <View style={styles.avatarContainer}>
+                            <Image
+                                style={styles.avatar}
+                                source={{ uri: user?.photoURL || 'https://via.placeholder.com/150' }}
+                            />
+                            <View style={styles.avatarBadge}>
+                                <MaterialIcons name="verified" size={20} color="#3b82f6" />
+                            </View>
+                        </View>
+
+                        <Text style={styles.profileEmail}>{user?.email || 'No email'}</Text>
+                        <Text style={styles.memberSince}>
+                            Member since {user?.metadata?.creationTime
+                                ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                                : 'Recently'}
                         </Text>
                     </View>
 
-                    {/* Profile Form */}
-                    <View className="px-4 space-y-4">
+                    {/* Form Section */}
+                    <View style={styles.formSection}>
                         {/* Display Name */}
-                        <View className="bg-white p-4 rounded-xl shadow-sm">
-                            <Text className="text-sm font-semibold text-gray-700 mb-2">Display Name</Text>
-                            <TextInput
-                                className="text-base text-gray-800 border-b border-gray-200 pb-2"
-                                value={profile.displayName}
-                                onChangeText={(text) => setProfile(prev => ({ ...prev, displayName: text }))}
-                                placeholder="Your display name"
-                                placeholderTextColor="#9CA3AF"
-                            />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Display Name</Text>
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="person-outline" size={20} color="#64748b" />
+                                <TextInput
+                                    style={styles.input}
+                                    value={profile.displayName}
+                                    onChangeText={(text) => setProfile(prev => ({ ...prev, displayName: text }))}
+                                    placeholder="Your display name"
+                                    placeholderTextColor="#94a3b8"
+                                />
+                            </View>
                         </View>
 
                         {/* Bio */}
-                        <View className="bg-white p-4 rounded-xl shadow-sm">
-                            <Text className="text-sm font-semibold text-gray-700 mb-2">Bio</Text>
-                            <TextInput
-                                className="text-base text-gray-800 border-b border-gray-200 pb-2"
-                                value={profile.bio}
-                                onChangeText={(text) => setProfile(prev => ({ ...prev, bio: text }))}
-                                placeholder="Tell others about yourself..."
-                                placeholderTextColor="#9CA3AF"
-                                multiline
-                                numberOfLines={3}
-                            />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Bio</Text>
+                            <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                                <Ionicons name="create-outline" size={20} color="#64748b" style={styles.textAreaIcon} />
+                                <TextInput
+                                    style={[styles.input, styles.textArea]}
+                                    value={profile.bio}
+                                    onChangeText={(text) => setProfile(prev => ({ ...prev, bio: text }))}
+                                    placeholder="Tell others about yourself..."
+                                    placeholderTextColor="#94a3b8"
+                                    multiline
+                                    numberOfLines={3}
+                                    textAlignVertical="top"
+                                />
+                            </View>
                         </View>
 
                         {/* Food Interests */}
-                        <View className="bg-white p-4 rounded-xl shadow-sm">
-                            <Text className="text-sm font-semibold text-gray-700 mb-2">Food Interests</Text>
-                            <TextInput
-                                className="text-base text-gray-800 border-b border-gray-200 pb-2"
-                                value={profile.foodInterests}
-                                onChangeText={(text) => setProfile(prev => ({ ...prev, foodInterests: text }))}
-                                placeholder="e.g. Spicy food, Desserts, Local cuisine..."
-                                placeholderTextColor="#9CA3AF"
-                                multiline
-                                numberOfLines={2}
-                            />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Food Interests</Text>
+                            <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                                <Text style={styles.textAreaIcon}>🍕</Text>
+                                <TextInput
+                                    style={[styles.input, styles.textArea]}
+                                    value={profile.foodInterests}
+                                    onChangeText={(text) => setProfile(prev => ({ ...prev, foodInterests: text }))}
+                                    placeholder="e.g. Spicy food, Desserts, Local cuisine..."
+                                    placeholderTextColor="#94a3b8"
+                                    multiline
+                                    numberOfLines={2}
+                                    textAlignVertical="top"
+                                />
+                            </View>
                         </View>
 
                         {/* Favorite Cuisines */}
-                        <View className="bg-white p-4 rounded-xl shadow-sm">
-                            <Text className="text-sm font-semibold text-gray-700 mb-2">Favorite Cuisines</Text>
-                            <TextInput
-                                className="text-base text-gray-800 border-b border-gray-200 pb-2"
-                                value={profile.favoriteCuisines}
-                                onChangeText={(text) => setProfile(prev => ({ ...prev, favoriteCuisines: text }))}
-                                placeholder="e.g. Italian, Thai, Mexican, Indian..."
-                                placeholderTextColor="#9CA3AF"
-                                multiline
-                                numberOfLines={2}
-                            />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Favorite Cuisines</Text>
+                            <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                                <Text style={styles.textAreaIcon}>🍽️</Text>
+                                <TextInput
+                                    style={[styles.input, styles.textArea]}
+                                    value={profile.favoriteCuisines}
+                                    onChangeText={(text) => setProfile(prev => ({ ...prev, favoriteCuisines: text }))}
+                                    placeholder="e.g. Italian, Thai, Mexican, Indian..."
+                                    placeholderTextColor="#94a3b8"
+                                    multiline
+                                    numberOfLines={2}
+                                    textAlignVertical="top"
+                                />
+                            </View>
                         </View>
 
                         {/* Dietary Restrictions */}
-                        <View className="bg-white p-4 rounded-xl shadow-sm">
-                            <Text className="text-sm font-semibold text-gray-700 mb-2">Dietary Restrictions</Text>
-                            <TextInput
-                                className="text-base text-gray-800 border-b border-gray-200 pb-2"
-                                value={profile.dietaryRestrictions}
-                                onChangeText={(text) => setProfile(prev => ({ ...prev, dietaryRestrictions: text }))}
-                                placeholder="e.g. Vegetarian, Gluten-free, Allergies..."
-                                placeholderTextColor="#9CA3AF"
-                                multiline
-                                numberOfLines={2}
-                            />
-                        </View>
-
-                        {/* Sign Out Button */}
-                        <View className="pt-6 pb-8">
-                            <TouchableOpacity
-                                onPress={handleSignOut}
-                                className="bg-red-500 p-4 rounded-xl flex-row items-center justify-center"
-                            >
-                                <MaterialIcons name="logout" size={20} color="white" />
-                                <Text className="text-white font-semibold text-base ml-2">Sign Out</Text>
-                            </TouchableOpacity>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Dietary Restrictions</Text>
+                            <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                                <Text style={styles.textAreaIcon}>🥗</Text>
+                                <TextInput
+                                    style={[styles.input, styles.textArea]}
+                                    value={profile.dietaryRestrictions}
+                                    onChangeText={(text) => setProfile(prev => ({ ...prev, dietaryRestrictions: text }))}
+                                    placeholder="e.g. Vegetarian, Gluten-free, Allergies..."
+                                    placeholderTextColor="#94a3b8"
+                                    multiline
+                                    numberOfLines={2}
+                                    textAlignVertical="top"
+                                />
+                            </View>
                         </View>
                     </View>
+
+                    {/* Sign Out Button */}
+                    <View style={styles.dangerZone}>
+                        <TouchableOpacity
+                            onPress={handleSignOut}
+                            style={styles.signOutButton}
+                        >
+                            <MaterialIcons name="logout" size={22} color="#ef4444" />
+                            <Text style={styles.signOutText}>Sign Out</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={{ height: 40 }} />
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#f8fafc',
+    },
+    flex: {
+        flex: 1,
+    },
+    centerContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#64748b',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: 'white',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e2e8f0',
+    },
+    backButton: {
+        width: 40,
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#1e293b',
+    },
+    saveButton: {
+        backgroundColor: '#3b82f6',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 12,
+        minWidth: 70,
+        alignItems: 'center',
+    },
+    saveButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingBottom: 20,
+    },
+    profileHeader: {
+        backgroundColor: 'white',
+        alignItems: 'center',
+        paddingVertical: 32,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e2e8f0',
+    },
+    avatarContainer: {
+        position: 'relative',
+        marginBottom: 16,
+    },
+    avatar: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        borderWidth: 4,
+        borderColor: '#e0e7ff',
+    },
+    avatarBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    profileEmail: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1e293b',
+        marginBottom: 4,
+    },
+    memberSince: {
+        fontSize: 14,
+        color: '#64748b',
+    },
+    formSection: {
+        paddingHorizontal: 20,
+        paddingTop: 24,
+    },
+    inputGroup: {
+        marginBottom: 20,
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#475569',
+        marginBottom: 8,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        gap: 12,
+    },
+    textAreaContainer: {
+        alignItems: 'flex-start',
+        paddingTop: 16,
+    },
+    textAreaIcon: {
+        marginTop: 2,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
+        color: '#1e293b',
+    },
+    textArea: {
+        minHeight: 60,
+        textAlignVertical: 'top',
+    },
+    dangerZone: {
+        paddingHorizontal: 20,
+        paddingTop: 32,
+    },
+    signOutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#fef2f2',
+        paddingVertical: 16,
+        borderRadius: 12,
+        gap: 10,
+        borderWidth: 1,
+        borderColor: '#fecaca',
+    },
+    signOutText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#ef4444',
+    },
+});
 
 export default ProfileScreen;
