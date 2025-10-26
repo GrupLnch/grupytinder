@@ -14,7 +14,7 @@ import Animated, {
     interpolate,
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import { fetchNearbyRestaurants } from '../utils/placesApi';
+import { fetchNearbyRestaurants, getPlaceholderImage } from '../utils/placesApi';
 import Constants from 'expo-constants';
 import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from '@react-native-firebase/firestore';
 
@@ -25,7 +25,6 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 const HomeScreen = () => {
     const navigation = useNavigation();
     const { user } = useAuth();
-    const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
 
     const [restaurants, setRestaurants] = useState([]);
     const [allRestaurants, setAllRestaurants] = useState([]);
@@ -343,10 +342,8 @@ const HomeScreen = () => {
     const renderCard = (card, index) => {
         if (!card) return null;
 
-        const photoReference = card.photos?.[0]?.photo_reference;
-        const imageUrl = photoReference
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
-            : 'https://via.placeholder.com/400';
+        // Use the pre-generated photoUrl from our API utility
+        const imageUrl = card.photoUrl || getPlaceholderImage(card.name);
 
         const openNow = card.opening_hours?.open_now;
         const rating = card.rating;
@@ -450,12 +447,14 @@ const HomeScreen = () => {
                                 <View style={styles.cardInner}>
                                     <Image
                                         source={{
-                                            uri: restaurants[currentIndex].photos?.[0]?.photo_reference
-                                                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurants[currentIndex].photos[0].photo_reference}&key=${GOOGLE_PLACES_API_KEY}`
-                                                : 'https://via.placeholder.com/400'
+                                            uri: restaurants[currentIndex].photoUrl ||
+                                                 getPlaceholderImage(restaurants[currentIndex].name)
                                         }}
                                         style={styles.cardImage}
                                         resizeMode="cover"
+                                        onError={(error) => {
+                                            console.error(`Image failed for ${restaurants[currentIndex].name}:`, error.nativeEvent.error);
+                                        }}
                                     />
                                     <View style={styles.cardInfo}>
                                         <Text style={styles.cardTitle} numberOfLines={2}>
