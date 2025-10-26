@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { fetchNearbyRestaurants, getPlaceholderImage } from '../utils/placesApi';
-import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from '@react-native-firebase/firestore';
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp, getDoc } from '@react-native-firebase/firestore';
 
 const firestore = getFirestore();
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -29,16 +29,19 @@ const HomeScreen = () => {
     const [allRestaurants, setAllRestaurants] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [likedRestaurants, setLikedRestaurants] = useState([]);
+    const [seenRestaurants, setSeenRestaurants] = useState(new Set());
     const [showFilters, setShowFilters] = useState(false);
+    const [showEmptyState, setShowEmptyState] = useState(false);
+    const [userStats, setUserStats] = useState({
+        totalSeen: 0,
+        totalLiked: 0,
+        streak: 0
+    });
+    const [searchRadius, setSearchRadius] = useState(1500);
     const [filters, setFilters] = useState({
-        // Availability
         openNow: false,
-
-        // Rating
         rating4Plus: false,
         rating3Plus: false,
-
-        // Cuisine Type
         american: false,
         italian: false,
         mexican: false,
@@ -46,120 +49,154 @@ const HomeScreen = () => {
         japanese: false,
         indian: false,
         thai: false,
-
-        // Meal Type
         breakfast: false,
         lunch: false,
         dinner: false,
         dessert: false,
-
-        // Dietary
         vegetarian: false,
         vegan: false,
-
-        // Price Range
-        budget: false,        // $
-        moderate: false,      // $$
-        expensive: false,     // $$$
-
-        // Atmosphere
+        budget: false,
+        moderate: false,
+        expensive: false,
         casual: false,
         formal: false,
         romantic: false,
         family: false,
+        includePreviouslySeen: false,
     });
 
-    // Animation values
     const translateX = useSharedValue(0);
     const translateY = useSharedValue(0);
     const rotateZ = useSharedValue(0);
 
-    // Load restaurants
+    // Load restaurants and seen history
     useEffect(() => {
         const loadRestaurants = async () => {
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 Alert.alert('Permission Denied', 'Using default location');
                 const mockLocation = '37.7749,-122.4194';
-                const results = await fetchNearbyRestaurants(mockLocation);
+                const results = await fetchNearbyRestaurants(mockLocation, searchRadius);
                 setAllRestaurants(results);
-                setRestaurants(results);
                 return;
             }
 
             const location = await Location.getCurrentPositionAsync({});
             const coords = `${location.coords.latitude},${location.coords.longitude}`;
-            const results = await fetchNearbyRestaurants(coords);
+            const results = await fetchNearbyRestaurants(coords, searchRadius);
             setAllRestaurants(results);
-            setRestaurants(results);
         };
 
         loadRestaurants();
-    }, []);
+    }, [searchRadius]);
+
+    // Load seen restaurants from Firebase
+    useEffect(() => {
+        const loadSeenRestaurants = async () => {
+            if (!user?.uid) return;
+
+            try {
+                const seenRef = collection(firestore, 'users', user.uid, 'seenRestaurants');
+                const seenSnapshot = await getDocs(seenRef);
+
+                const seenIds = new Set();
+                seenSnapshot.forEach(doc => {
+                    seenIds.add(doc.id);
+                });
+
+                setSeenRestaurants(seenIds);
+                console.log(`Loaded ${seenIds.size} previously seen restaurants`);
+            } catch (error) {
+                console.error("Error loading seen restaurants:", error);
+            }
+        };
+
+        loadSeenRestaurants();
+    }, [user]);
+
+    // Load user stats
+    useEffect(() => {
+        const loadUserStats = async () => {
+            if (!user?.uid) return;
+
+            try {
+                const statsRef = doc(firestore, 'users', user.uid, 'stats', 'summary');
+                const statsDoc = await getDoc(statsRef);
+
+                if (statsDoc.exists()) {
+                    setUserStats(statsDoc.data());
+                }
+            } catch (error) {
+                console.error("Error loading stats:", error);
+            }
+        };
+
+        loadUserStats();
+    }, [user]);
 
     // Apply filters
     useEffect(() => {
         applyFilters();
-    }, [filters, allRestaurants]);
+    }, [filters, allRestaurants, seenRestaurants]);
 
     const applyFilters = () => {
         if (!allRestaurants.length) return;
 
-        const hasActiveFilters = Object.values(filters).some(v => v);
+        let filtered = [...allRestaurants];
 
-        if (!hasActiveFilters) {
-            setRestaurants(allRestaurants);
-            setCurrentIndex(0);
-            return;
+        // Filter out seen restaurants UNLESS the toggle is on
+        if (!filters.includePreviouslySeen) {
+            filtered = filtered.filter(r => !seenRestaurants.has(r.place_id));
         }
 
-        const filtered = allRestaurants.filter(restaurant => {
-            const name = restaurant.name?.toLowerCase() || '';
-            const types = restaurant.types || [];
-            const rating = restaurant.rating || 0;
+        // Apply other filters
+        const hasActiveFilters = Object.keys(filters).some(
+            key => key !== 'includePreviouslySeen' && filters[key]
+        );
 
-            // Availability
-            if (filters.openNow && !restaurant.opening_hours?.open_now) return false;
+        if (hasActiveFilters) {
+            filtered = filtered.filter(restaurant => {
+                const name = restaurant.name?.toLowerCase() || '';
+                const types = restaurant.types || [];
+                const rating = restaurant.rating || 0;
 
-            // Rating
-            if (filters.rating4Plus && rating < 4.0) return false;
-            if (filters.rating3Plus && rating < 3.0) return false;
+                if (filters.openNow && !restaurant.opening_hours?.open_now) return false;
+                if (filters.rating4Plus && rating < 4.0) return false;
+                if (filters.rating3Plus && rating < 3.0) return false;
+                if (filters.american && !name.includes('american') && !name.includes('burger') && !name.includes('grill')) return false;
+                if (filters.italian && !name.includes('italian') && !name.includes('pizza') && !name.includes('pasta')) return false;
+                if (filters.mexican && !name.includes('mexican') && !name.includes('taco') && !name.includes('burrito')) return false;
+                if (filters.chinese && !name.includes('chinese') && !name.includes('wok')) return false;
+                if (filters.japanese && !name.includes('japanese') && !name.includes('sushi') && !name.includes('ramen')) return false;
+                if (filters.indian && !name.includes('indian') && !name.includes('curry')) return false;
+                if (filters.thai && !name.includes('thai') && !name.includes('pad thai')) return false;
+                if (filters.breakfast && !name.includes('breakfast') && !name.includes('cafe') && !types.includes('cafe')) return false;
+                if (filters.lunch && !types.includes('restaurant') && !types.includes('meal_takeaway')) return false;
+                if (filters.dinner && !types.includes('restaurant') && !types.includes('night_club')) return false;
+                if (filters.dessert && !name.includes('dessert') && !name.includes('ice cream') && !name.includes('bakery') && !types.includes('bakery')) return false;
+                if (filters.vegetarian && !name.includes('vegetarian') && !name.includes('veg') && !name.includes('salad')) return false;
+                if (filters.vegan && !name.includes('vegan')) return false;
+                if (filters.budget && rating > 3.5) return false;
+                if (filters.moderate && (rating < 3.5 || rating > 4.3)) return false;
+                if (filters.expensive && rating < 4.0) return false;
+                if (filters.casual && rating > 4.3) return false;
+                if (filters.formal && rating < 4.0) return false;
+                if (filters.romantic && rating < 4.0) return false;
+                if (filters.family && (!types.includes('restaurant') || rating < 3.5)) return false;
 
-            // Cuisine Type (keyword matching)
-            if (filters.american && !name.includes('american') && !name.includes('burger') && !name.includes('grill')) return false;
-            if (filters.italian && !name.includes('italian') && !name.includes('pizza') && !name.includes('pasta')) return false;
-            if (filters.mexican && !name.includes('mexican') && !name.includes('taco') && !name.includes('burrito')) return false;
-            if (filters.chinese && !name.includes('chinese') && !name.includes('wok')) return false;
-            if (filters.japanese && !name.includes('japanese') && !name.includes('sushi') && !name.includes('ramen')) return false;
-            if (filters.indian && !name.includes('indian') && !name.includes('curry')) return false;
-            if (filters.thai && !name.includes('thai') && !name.includes('pad thai')) return false;
+                return true;
+            });
+        }
 
-            // Meal Type
-            if (filters.breakfast && !name.includes('breakfast') && !name.includes('cafe') && !types.includes('cafe')) return false;
-            if (filters.lunch && !types.includes('restaurant') && !types.includes('meal_takeaway')) return false;
-            if (filters.dinner && !types.includes('restaurant') && !types.includes('night_club')) return false;
-            if (filters.dessert && !name.includes('dessert') && !name.includes('ice cream') && !name.includes('bakery') && !types.includes('bakery')) return false;
+        // Mark seen restaurants with a flag
+        const enhancedFiltered = filtered.map(r => ({
+            ...r,
+            wasSeen: seenRestaurants.has(r.place_id)
+        }));
 
-            // Dietary
-            if (filters.vegetarian && !name.includes('vegetarian') && !name.includes('veg') && !name.includes('salad')) return false;
-            if (filters.vegan && !name.includes('vegan')) return false;
-
-            // Price Range (using rating as proxy since Google doesn't always provide price_level)
-            if (filters.budget && rating > 3.5) return false;
-            if (filters.moderate && (rating < 3.5 || rating > 4.3)) return false;
-            if (filters.expensive && rating < 4.0) return false;
-
-            // Atmosphere
-            if (filters.casual && rating > 4.3) return false;
-            if (filters.formal && rating < 4.0) return false;
-            if (filters.romantic && rating < 4.0) return false;
-            if (filters.family && (!types.includes('restaurant') || rating < 3.5)) return false;
-
-            return true;
-        });
-
-        setRestaurants(filtered);
+        setRestaurants(enhancedFiltered);
         setCurrentIndex(0);
+        setShowEmptyState(enhancedFiltered.length === 0);
     };
 
     const resetFilters = () => {
@@ -187,11 +224,82 @@ const HomeScreen = () => {
             formal: false,
             romantic: false,
             family: false,
+            includePreviouslySeen: false,
         });
     };
 
     const toggleFilter = (key) => {
         setFilters(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const expandSearchArea = async () => {
+        const newRadius = searchRadius + 1500;
+        setSearchRadius(newRadius);
+        Alert.alert("Search Expanded", `Now searching within ${(newRadius / 1609).toFixed(1)} miles`);
+    };
+
+    const resetProgress = () => {
+        Alert.alert(
+            "Reset Progress",
+            "This will let you swipe through all restaurants again. Continue?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Reset",
+                    style: "destructive",
+                    onPress: async () => {
+                        if (!user?.uid) return;
+
+                        try {
+                            // Clear seen restaurants
+                            const seenRef = collection(firestore, 'users', user.uid, 'seenRestaurants');
+                            const snapshot = await getDocs(seenRef);
+
+                            const deletePromises = [];
+                            snapshot.forEach(doc => {
+                                deletePromises.push(deleteDoc(doc.ref));
+                            });
+
+                            await Promise.all(deletePromises);
+
+                            setSeenRestaurants(new Set());
+                            setShowEmptyState(false);
+                            Alert.alert("Success", "Your progress has been reset!");
+                        } catch (error) {
+                            console.error("Error resetting progress:", error);
+                            Alert.alert("Error", "Failed to reset progress");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    // Mark restaurant as seen
+    const markAsSeen = async (restaurant, action) => {
+        if (!user?.uid || !restaurant?.place_id) return;
+
+        try {
+            await setDoc(doc(firestore, 'users', user.uid, 'seenRestaurants', restaurant.place_id), {
+                name: restaurant.name,
+                action,
+                timestamp: serverTimestamp()
+            });
+
+            setSeenRestaurants(prev => new Set([...prev, restaurant.place_id]));
+
+            // Update stats
+            const newStats = {
+                totalSeen: userStats.totalSeen + 1,
+                totalLiked: action === 'liked' ? userStats.totalLiked + 1 : userStats.totalLiked,
+                lastActive: serverTimestamp()
+            };
+
+            await setDoc(doc(firestore, 'users', user.uid, 'stats', 'summary'), newStats, { merge: true });
+            setUserStats(prev => ({ ...prev, ...newStats }));
+        } catch (error) {
+            console.error("Error marking as seen:", error);
+        }
     };
 
     // Load liked restaurants
@@ -259,12 +367,14 @@ const HomeScreen = () => {
     const onSwipedLeft = (index) => {
         const restaurant = restaurants[index];
         removeRestaurantFromLikes(restaurant);
+        markAsSeen(restaurant, 'passed');
         console.log('Disliked:', restaurant?.name);
     };
 
     const onSwipedRight = (index) => {
         const restaurant = restaurants[index];
         saveLikedRestaurant(restaurant);
+        markAsSeen(restaurant, 'liked');
         console.log('Liked:', restaurant?.name);
     };
 
@@ -341,13 +451,10 @@ const HomeScreen = () => {
     const renderCard = (card, index) => {
         if (!card) return null;
 
-        // Use the pre-generated photoUrl from our API utility
         const imageUrl = card.photoUrl || getPlaceholderImage(card.name);
-
         const openNow = card.opening_hours?.open_now;
         const rating = card.rating;
         const ratingsTotal = card.user_ratings_total;
-
         const offset = index - currentIndex;
 
         return (
@@ -370,6 +477,14 @@ const HomeScreen = () => {
                     style={styles.cardImage}
                     resizeMode="cover"
                 />
+
+                {/* Seen Badge */}
+                {card.wasSeen && (
+                    <View style={styles.seenBadge}>
+                        <Ionicons name="eye" size={14} color="white" />
+                        <Text style={styles.seenBadgeText}>SEEN</Text>
+                    </View>
+                )}
 
                 <View style={styles.cardInfo}>
                     <Text style={styles.cardTitle} numberOfLines={2}>
@@ -414,7 +529,6 @@ const HomeScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} testID="home-screen-view">
-            {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
                     <Image
@@ -433,9 +547,54 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Cards Container */}
             <View style={styles.cardsContainer}>
-                {restaurants.length > 0 && currentIndex < restaurants.length ? (
+                {showEmptyState ? (
+                    // EMPTY STATE WITH GAMIFICATION
+                    <View style={styles.emptyStateContainer}>
+                        <Text style={styles.emptyStateEmoji}>🎉</Text>
+                        <Text style={styles.emptyStateTitle}>You've Explored All Nearby!</Text>
+
+                        <View style={styles.statsCard}>
+                            <View style={styles.statItem}>
+                                <Text style={styles.statNumber}>{userStats.totalSeen}</Text>
+                                <Text style={styles.statLabel}>Discovered</Text>
+                            </View>
+                            <View style={styles.statDivider} />
+                            <View style={styles.statItem}>
+                                <Text style={[styles.statNumber, { color: '#22c55e' }]}>{userStats.totalLiked}</Text>
+                                <Text style={styles.statLabel}>Favorites</Text>
+                            </View>
+                            <View style={styles.statDivider} />
+                            <View style={styles.statItem}>
+                                <Text style={[styles.statNumber, { color: '#f59e0b' }]}>{userStats.streak || 0}</Text>
+                                <Text style={styles.statLabel}>Day Streak</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.emptyStateActions}>
+                            <TouchableOpacity style={styles.emptyActionButton} onPress={expandSearchArea}>
+                                <Ionicons name="map" size={24} color="#3b82f6" />
+                                <Text style={styles.emptyActionText}>Expand Area</Text>
+                                <Text style={styles.emptyActionSubtext}>+1.5 miles</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.emptyActionButton} onPress={resetProgress}>
+                                <Ionicons name="refresh" size={24} color="#8b5cf6" />
+                                <Text style={styles.emptyActionText}>Start Over</Text>
+                                <Text style={styles.emptyActionSubtext}>Re-swipe all</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.emptyActionButton}
+                                onPress={() => navigation.navigate('Favorites')}
+                            >
+                                <AntDesign name="heart" size={24} color="#ef4444" />
+                                <Text style={styles.emptyActionText}>My Favorites</Text>
+                                <Text style={styles.emptyActionSubtext}>{likedRestaurants.length} saved</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                ) : restaurants.length > 0 && currentIndex < restaurants.length ? (
                     <View style={styles.cardStack}>
                         {restaurants.slice(currentIndex + 1, currentIndex + 3).map((restaurant, i) =>
                             renderCard(restaurant, currentIndex + i + 1)
@@ -451,10 +610,15 @@ const HomeScreen = () => {
                                         }}
                                         style={styles.cardImage}
                                         resizeMode="cover"
-                                        onError={(error) => {
-                                            console.error(`Image failed for ${restaurants[currentIndex].name}:`, error.nativeEvent.error);
-                                        }}
                                     />
+
+                                    {restaurants[currentIndex].wasSeen && (
+                                        <View style={styles.seenBadge}>
+                                            <Ionicons name="eye" size={14} color="white" />
+                                            <Text style={styles.seenBadgeText}>SEEN</Text>
+                                        </View>
+                                    )}
+
                                     <View style={styles.cardInfo}>
                                         <Text style={styles.cardTitle} numberOfLines={2}>
                                             {restaurants[currentIndex].name || 'Unknown Restaurant'}
@@ -496,23 +660,16 @@ const HomeScreen = () => {
                     </View>
                 ) : (
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyText}>
-                            {restaurants.length === 0 ? 'Loading restaurants...' : 'No more restaurants!'}
-                        </Text>
-                        {restaurants.length === 0 && allRestaurants.length > 0 && (
-                            <TouchableOpacity onPress={resetFilters} style={styles.resetButton}>
-                                <Text style={styles.resetButtonText}>Reset Filters</Text>
-                            </TouchableOpacity>
-                        )}
+                        <Text style={styles.emptyText}>Loading restaurants...</Text>
                     </View>
                 )}
             </View>
 
-            {/* Action Buttons */}
             <View style={styles.actionButtons}>
                 <TouchableOpacity
                     onPress={() => handleSwipe('left')}
                     style={[styles.actionButton, styles.dislikeButton]}
+                    disabled={showEmptyState}
                 >
                     <AntDesign name="close" size={32} color="white" />
                 </TouchableOpacity>
@@ -520,12 +677,13 @@ const HomeScreen = () => {
                 <TouchableOpacity
                     onPress={() => handleSwipe('right')}
                     style={[styles.actionButton, styles.likeButton]}
+                    disabled={showEmptyState}
                 >
                     <AntDesign name="heart" size={32} color="white" />
                 </TouchableOpacity>
             </View>
 
-            {/* Filter Modal */}
+            {/* FILTER MODAL */}
             <Modal
                 visible={showFilters}
                 animationType="slide"
@@ -542,7 +700,37 @@ const HomeScreen = () => {
                         </View>
 
                         <ScrollView style={styles.filterOptions} showsVerticalScrollIndicator={false}>
-                            {/* Availability */}
+                            {/* NEW: Include Previously Seen Toggle */}
+                            <View style={styles.revisitSection}>
+                                <View style={styles.revisitHeader}>
+                                    <Ionicons name="refresh-circle" size={24} color="#8b5cf6" />
+                                    <Text style={styles.revisitTitle}>Revisit Mode</Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.filterOption}
+                                    onPress={() => toggleFilter('includePreviouslySeen')}
+                                >
+                                    <View>
+                                        <Text style={styles.filterLabel}>Include Previously Seen</Text>
+                                        <Text style={styles.filterSubtext}>
+                                            {filters.includePreviouslySeen
+                                                ? 'Showing all restaurants'
+                                                : 'Only showing new restaurants'}
+                                        </Text>
+                                    </View>
+                                    <View style={[
+                                        styles.toggle,
+                                        filters.includePreviouslySeen && styles.toggleActive
+                                    ]}>
+                                        <View style={[
+                                            styles.toggleThumb,
+                                            filters.includePreviouslySeen && styles.toggleThumbActive
+                                        ]} />
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Rest of filters... */}
                             <Text style={styles.sectionTitle}>⏰ Availability</Text>
                             <TouchableOpacity style={styles.filterOption} onPress={() => toggleFilter('openNow')}>
                                 <Text style={styles.filterLabel}>Open Now</Text>
@@ -739,38 +927,6 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: '#ef4444',
     },
-    chipContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-        marginBottom: 8,
-    },
-    chip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        backgroundColor: '#f1f5f9',
-        borderWidth: 2,
-        borderColor: '#e2e8f0',
-        gap: 6,
-    },
-    chipActive: {
-        backgroundColor: '#3b82f6',
-        borderColor: '#3b82f6',
-    },
-    chipEmoji: {
-        fontSize: 16,
-    },
-    chipText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#475569',
-    },
-    chipTextActive: {
-        color: 'white',
-    },
     cardsContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -800,6 +956,24 @@ const styles = StyleSheet.create({
     cardImage: {
         width: '100%',
         height: 240,
+    },
+    seenBadge: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(139, 92, 246, 0.9)',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        gap: 4,
+    },
+    seenBadgeText: {
+        color: 'white',
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
     cardInfo: {
         padding: 20,
@@ -879,16 +1053,87 @@ const styles = StyleSheet.create({
         color: 'white',
         marginBottom: 16,
     },
-    resetButton: {
-        backgroundColor: 'white',
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 20,
+
+    // NEW: Empty State Styles
+    emptyStateContainer: {
+        alignItems: 'center',
+        paddingHorizontal: 32,
+        width: '100%',
     },
-    resetButtonText: {
+    emptyStateEmoji: {
+        fontSize: 64,
+        marginBottom: 16,
+    },
+    emptyStateTitle: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        color: 'white',
+        marginBottom: 24,
+        textAlign: 'center',
+    },
+    statsCard: {
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 32,
+        width: '100%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    statItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    statNumber: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: '#3b82f6',
+        marginBottom: 4,
+    },
+    statLabel: {
+        fontSize: 13,
         color: '#64748b',
         fontWeight: '600',
     },
+    statDivider: {
+        width: 1,
+        backgroundColor: '#e2e8f0',
+        marginHorizontal: 8,
+    },
+    emptyStateActions: {
+        width: '100%',
+        gap: 12,
+    },
+    emptyActionButton: {
+        backgroundColor: 'white',
+        borderRadius: 16,
+        padding: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    emptyActionText: {
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1e293b',
+    },
+    emptyActionSubtext: {
+        fontSize: 13,
+        color: '#64748b',
+        fontWeight: '500',
+    },
+
+    // Modal Styles
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -918,6 +1163,58 @@ const styles = StyleSheet.create({
     filterOptions: {
         padding: 20,
     },
+
+    // NEW: Revisit Section Styles
+    revisitSection: {
+        backgroundColor: '#f8f9ff',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 2,
+        borderColor: '#e0e7ff',
+    },
+    revisitHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 12,
+    },
+    revisitTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#8b5cf6',
+    },
+    filterSubtext: {
+        fontSize: 13,
+        color: '#64748b',
+        marginTop: 2,
+    },
+    toggle: {
+        width: 52,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#cbd5e1',
+        justifyContent: 'center',
+        padding: 2,
+    },
+    toggleActive: {
+        backgroundColor: '#8b5cf6',
+    },
+    toggleThumb: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: 'white',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    toggleThumbActive: {
+        transform: [{ translateX: 24 }],
+    },
+
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
@@ -936,6 +1233,7 @@ const styles = StyleSheet.create({
     filterLabel: {
         fontSize: 16,
         color: '#475569',
+        fontWeight: '500',
     },
     checkbox: {
         width: 28,
@@ -949,6 +1247,38 @@ const styles = StyleSheet.create({
     checkboxActive: {
         backgroundColor: '#3b82f6',
         borderColor: '#3b82f6',
+    },
+    chipContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginBottom: 8,
+    },
+    chip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        backgroundColor: '#f1f5f9',
+        borderWidth: 2,
+        borderColor: '#e2e8f0',
+        gap: 6,
+    },
+    chipActive: {
+        backgroundColor: '#3b82f6',
+        borderColor: '#3b82f6',
+    },
+    chipEmoji: {
+        fontSize: 16,
+    },
+    chipText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#475569',
+    },
+    chipTextActive: {
+        color: 'white',
     },
     modalFooter: {
         flexDirection: 'row',
