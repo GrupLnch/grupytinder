@@ -3,7 +3,6 @@ import { Text, View, SafeAreaView, TouchableOpacity, Image, FlatList, Alert, Act
 import { useFocusEffect } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
 import { MaterialIcons, Ionicons, AntDesign } from "@expo/vector-icons";
-import Constants from 'expo-constants';
 import { getPlaceholderImage, getPhotoUrl } from '../utils/placesApi';
 import { getFirestore, collection, getDocs, doc, deleteDoc } from '@react-native-firebase/firestore';
 
@@ -127,7 +126,7 @@ const FavoritesScreen = () => {
                     source={{ uri: imageUrl }}
                     style={styles.listImage}
                     resizeMode="cover"
-                    onError={(error) => {
+                    onError={() => {
                         console.error(`Failed to load image for ${item.name}`);
                     }}
                 />
@@ -203,7 +202,7 @@ const FavoritesScreen = () => {
                     source={{ uri: imageUrl }}
                     style={styles.gridImage}
                     resizeMode="cover"
-                    onError={(error) => {
+                    onError={() => {
                         console.error(`Failed to load grid image for ${item.name}`);
                     }}
                 />
