@@ -552,7 +552,7 @@ const HomeScreen = () => {
                     // EMPTY STATE WITH GAMIFICATION
                     <View style={styles.emptyStateContainer}>
                         <Text style={styles.emptyStateEmoji}>🎉</Text>
-                        <Text style={styles.emptyStateTitle}>You've Explored All Nearby!</Text>
+                        <Text style={styles.emptyStateTitle}>You&apos;ve Explored All Nearby!</Text>
 
                         <View style={styles.statsCard}>
                             <View style={styles.statItem}>
