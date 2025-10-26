@@ -15,7 +15,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { fetchNearbyRestaurants, getPlaceholderImage } from '../utils/placesApi';
-import Constants from 'expo-constants';
 import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from '@react-native-firebase/firestore';
 
 const firestore = getFirestore();
