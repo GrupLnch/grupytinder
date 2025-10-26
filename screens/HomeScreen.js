@@ -668,7 +668,11 @@ const HomeScreen = () => {
             <View style={styles.actionButtons}>
                 <TouchableOpacity
                     onPress={() => handleSwipe('left')}
-                    style={[styles.actionButton, styles.dislikeButton]}
+                    style={[
+                        styles.actionButton,
+                        styles.dislikeButton,
+                        showEmptyState && styles.actionButtonHidden
+                    ]}
                     disabled={showEmptyState}
                 >
                     <AntDesign name="close" size={32} color="white" />
@@ -676,7 +680,11 @@ const HomeScreen = () => {
 
                 <TouchableOpacity
                     onPress={() => handleSwipe('right')}
-                    style={[styles.actionButton, styles.likeButton]}
+                    style={[
+                        styles.actionButton,
+                        styles.likeButton,
+                        showEmptyState && styles.actionButtonHidden
+                    ]}
                     disabled={showEmptyState}
                 >
                     <AntDesign name="heart" size={32} color="white" />
@@ -1043,6 +1051,10 @@ const styles = StyleSheet.create({
     },
     likeButton: {
         backgroundColor: '#22c55e',
+    },
+    actionButtonHidden: {
+        opacity: 0,
+        transform: [{ scale: 0 }],
     },
     emptyState: {
         justifyContent: 'center',
