@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import useAuth from '../hooks/useAuth';
 import { MaterialIcons, Ionicons, AntDesign } from "@expo/vector-icons";
 import Constants from 'expo-constants';
+import { getPlaceholderImage, getPhotoUrl } from '../utils/placesApi';
 import { getFirestore, collection, getDocs, doc, deleteDoc } from '@react-native-firebase/firestore';
 
 const firestore = getFirestore();
@@ -15,8 +16,6 @@ const FavoritesScreen = () => {
     const [favoriteRestaurants, setFavoriteRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
-
-    const { GOOGLE_PLACES_API_KEY } = Constants.expoConfig?.extra || {};
 
     const fetchFavoriteRestaurants = async () => {
         if (!user?.uid) {
@@ -111,10 +110,11 @@ const FavoritesScreen = () => {
     const renderListItem = ({ item }) => {
         if (!item) return null;
 
+        // Use photoUrl if available, otherwise construct from photo_reference, or use placeholder
         const photoReference = item.photos?.[0]?.photo_reference;
-        const imageUrl = photoReference
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
-            : 'https://via.placeholder.com/400';
+        const imageUrl = item.photoUrl ||
+                         (photoReference ? getPhotoUrl(photoReference, 800) : null) ||
+                         getPlaceholderImage(item.name);
 
         const openNow = item.opening_hours?.open_now;
         const rating = item.rating;
@@ -127,6 +127,9 @@ const FavoritesScreen = () => {
                     source={{ uri: imageUrl }}
                     style={styles.listImage}
                     resizeMode="cover"
+                    onError={(error) => {
+                        console.error(`Failed to load image for ${item.name}`);
+                    }}
                 />
 
                 <View style={styles.listContent}>
@@ -185,10 +188,11 @@ const FavoritesScreen = () => {
     const renderGridItem = ({ item }) => {
         if (!item) return null;
 
+        // Use photoUrl if available, otherwise construct from photo_reference, or use placeholder
         const photoReference = item.photos?.[0]?.photo_reference;
-        const imageUrl = photoReference
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
-            : 'https://via.placeholder.com/400';
+        const imageUrl = item.photoUrl ||
+                         (photoReference ? getPhotoUrl(photoReference, 400) : null) ||
+                         getPlaceholderImage(item.name);
 
         const openNow = item.opening_hours?.open_now;
         const rating = item.rating;
@@ -199,6 +203,9 @@ const FavoritesScreen = () => {
                     source={{ uri: imageUrl }}
                     style={styles.gridImage}
                     resizeMode="cover"
+                    onError={(error) => {
+                        console.error(`Failed to load grid image for ${item.name}`);
+                    }}
                 />
 
                 <TouchableOpacity
